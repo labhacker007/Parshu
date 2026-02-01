@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 
 class AppPermission(str, Enum):
-    """All permissions in the Orion platform organized by functional area."""
+    """All permissions in the Parshu platform organized by functional area."""
     
     # =============================================================================
     # DASHBOARD PERMISSIONS
@@ -383,7 +383,7 @@ FUNCTIONAL_AREAS: Dict[str, FunctionalArea] = {
     "chatbot": FunctionalArea(
         key="chatbot",
         name="AI Assistant",
-        description="Orion AI chatbot assistant",
+        description="Parshu AI chatbot assistant",
         permissions=[
             AppPermission.CHATBOT_USE.value,
             AppPermission.CHATBOT_VIEW_HISTORY.value,

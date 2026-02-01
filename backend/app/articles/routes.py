@@ -39,7 +39,7 @@ def article_to_response(article: Article, user_id: Optional[int] = None, db: Opt
         "url": article.url,
         "image_url": getattr(article, 'image_url', None),
         "published_at": article.published_at,  # Original publication date from source
-        "ingested_at": getattr(article, 'ingested_at', None) or article.created_at,  # When Orion ingested
+        "ingested_at": getattr(article, 'ingested_at', None) or article.created_at,  # When Parshu ingested
         "status": article.status.value if hasattr(article.status, 'value') else article.status,
         "source_id": article.source_id,
         "source_name": article.feed_source.name if article.feed_source else None,

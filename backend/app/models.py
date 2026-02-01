@@ -181,7 +181,7 @@ class Article(Base):
     content_hash = Column(String(64), nullable=True, index=True)  # SHA-256 hash for dedup
     
     # Dual date tracking
-    ingested_at = Column(DateTime, default=datetime.utcnow, index=True)  # When Orion ingested the article
+    ingested_at = Column(DateTime, default=datetime.utcnow, index=True)  # When Parshu ingested the article
     # Note: published_at is the original article publication date from the source
     # Note: created_at is retained for backward compatibility
     

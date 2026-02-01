@@ -8,7 +8,7 @@ from app.seeds import seed_database
 
 @click.group()
 def cli():
-    """Orion admin CLI"""
+    """Parshu admin CLI"""
     pass
 
 

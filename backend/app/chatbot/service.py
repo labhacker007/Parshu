@@ -179,8 +179,8 @@ class DocumentStore:
         return results[:limit]
 
 
-class OrionChatbot:
-    """AI-powered chatbot for Orion platform assistance with RAG and Guardrails."""
+class ParshuChatbot:
+    """AI-powered chatbot for Parshu platform assistance with RAG and Guardrails."""
     
     def __init__(self, db_session=None):
         self.document_store = DocumentStore()
@@ -221,7 +221,7 @@ class OrionChatbot:
         # Get guardrails from the prompts system
         guardrails = get_chatbot_guardrails()
         
-        base_prompt = """You are Orion Assistant, an AI-powered helper for the Orion Threat Intelligence Platform.
+        base_prompt = """You are Parshu Assistant, an AI-powered helper for the Parshu Threat Intelligence Platform.
 
 === YOUR ROLE ===
 You are a senior cybersecurity expert with deep knowledge in:
@@ -577,9 +577,9 @@ If you used information from the knowledge base, mention the source."""
 
 
 # Global chatbot instance
-_chatbot_instance: Optional[OrionChatbot] = None
+_chatbot_instance: Optional[ParshuChatbot] = None
 
-def get_chatbot(db_session=None) -> OrionChatbot:
+def get_chatbot(db_session=None) -> ParshuChatbot:
     """Get or create chatbot instance, optionally with a database session for RAG."""
     global _chatbot_instance
     if _chatbot_instance is None:
@@ -590,6 +590,6 @@ def get_chatbot(db_session=None) -> OrionChatbot:
     return _chatbot_instance
 
 
-def create_chatbot_with_rag(db_session) -> OrionChatbot:
+def create_chatbot_with_rag(db_session) -> ParshuChatbot:
     """Create a new chatbot instance with RAG support (for request-scoped usage)."""
     return OrionChatbot(db_session=db_session)

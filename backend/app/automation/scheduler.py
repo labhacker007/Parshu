@@ -78,7 +78,7 @@ SCHEDULABLE_FUNCTIONS = {
         "name": "Daily Intelligence Report",
         "category": SchedulableFunctionCategory.REPORTS,
         "description": "Generates daily intelligence summary report",
-        "details": "Creates a summary of the last 24 hours: new articles ingested, hunts executed, findings detected. Report saved as 'Orion_Daily_Report_YYYY-MM-DD.pdf'",
+        "details": "Creates a summary of the last 24 hours: new articles ingested, hunts executed, findings detected. Report saved as 'Parshu_Daily_Report_YYYY-MM-DD.pdf'",
         "impact": "Provides daily situational awareness for security teams",
         "default_trigger": {"type": "cron", "hour": 8, "minute": 0},
         "is_system": True
@@ -87,7 +87,7 @@ SCHEDULABLE_FUNCTIONS = {
         "name": "Weekly Intelligence Report",
         "category": SchedulableFunctionCategory.REPORTS,
         "description": "Generates weekly comprehensive intelligence report",
-        "details": "Creates a comprehensive weekly summary with trends, top threats, hunt results, and key metrics. Saved as 'Orion_Weekly_Report_YYYY-Wxx.pdf'",
+        "details": "Creates a comprehensive weekly summary with trends, top threats, hunt results, and key metrics. Saved as 'Parshu_Weekly_Report_YYYY-Wxx.pdf'",
         "impact": "Provides weekly executive briefing for leadership",
         "default_trigger": {"type": "cron", "day_of_week": "mon", "hour": 7, "minute": 0},
         "is_system": False
@@ -523,7 +523,7 @@ class HuntScheduler:
         try:
             # Use standardized date format: YYYY-MM-DD
             report_date = datetime.utcnow().strftime("%Y-%m-%d")
-            report_name = f"Orion_Daily_Report_{report_date}"
+            report_name = f"Parshu_Daily_Report_{report_date}"
             
             yesterday = datetime.utcnow() - timedelta(days=1)
             
@@ -729,7 +729,7 @@ class HuntScheduler:
             # Get week number
             now = datetime.utcnow()
             week_num = now.isocalendar()[1]
-            report_name = f"Orion_Weekly_Report_{now.year}-W{week_num:02d}"
+            report_name = f"Parshu_Weekly_Report_{now.year}-W{week_num:02d}"
             
             # Get reviewed articles from last 7 days
             week_ago = now - timedelta(days=7)
@@ -774,7 +774,7 @@ class HuntScheduler:
             from app.reports.routes import _generate_executive_summary, _extract_key_findings, _extract_recommendations
             
             report_date = datetime.utcnow().strftime("%Y-%m-%d")
-            report_name = f"Orion_Executive_Summary_{report_date}"
+            report_name = f"Parshu_Executive_Summary_{report_date}"
             
             # Get high-priority reviewed articles from last 24 hours
             yesterday = datetime.utcnow() - timedelta(days=1)
@@ -826,7 +826,7 @@ class HuntScheduler:
             from app.reports.routes import _generate_technical_summary, _extract_key_findings
             
             report_date = datetime.utcnow().strftime("%Y-%m-%d")
-            report_name = f"Orion_Technical_Report_{report_date}"
+            report_name = f"Parshu_Technical_Report_{report_date}"
             
             # Get reviewed articles from last 24 hours
             yesterday = datetime.utcnow() - timedelta(days=1)
@@ -869,7 +869,7 @@ class HuntScheduler:
             from app.reports.routes import _generate_executive_summary, _extract_key_findings, _extract_recommendations
             
             report_date = datetime.utcnow().strftime("%Y-%m-%d")
-            report_name = f"Orion_HighPriority_Daily_{report_date}"
+            report_name = f"Parshu_HighPriority_Daily_{report_date}"
             
             yesterday = datetime.utcnow() - timedelta(days=1)
             articles = db.query(Article).filter(
@@ -913,7 +913,7 @@ class HuntScheduler:
             
             now = datetime.utcnow()
             week_num = now.isocalendar()[1]
-            report_name = f"Orion_Comprehensive_Weekly_{now.year}-W{week_num:02d}"
+            report_name = f"Parshu_Comprehensive_Weekly_{now.year}-W{week_num:02d}"
             
             week_ago = now - timedelta(days=7)
             articles = db.query(Article).filter(

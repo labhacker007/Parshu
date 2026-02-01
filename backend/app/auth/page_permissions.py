@@ -260,7 +260,7 @@ PAGE_DEFINITIONS: Dict[str, PageDefinition] = {
     ),
     "chatbot": PageDefinition(
         page_key="chatbot",
-        page_name="Orion AI",
+        page_name="Parshu AI",
         page_path="/chat",
         description="AI-powered chatbot assistant",
         category="Tools",

@@ -51,7 +51,7 @@ async def chat(
     db: Session = Depends(get_db)
 ):
     """
-    Send a message to the Orion chatbot and get a response.
+    Send a message to the Parshu chatbot and get a response.
     
     The chatbot uses:
     - Knowledge Base RAG: Retrieves relevant context from admin-managed documents

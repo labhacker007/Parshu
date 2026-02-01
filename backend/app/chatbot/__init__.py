@@ -1,1 +1,1 @@
-"""Orion Chatbot module for AI-powered assistance."""
+"""Parshu Chatbot module for AI-powered assistance."""
