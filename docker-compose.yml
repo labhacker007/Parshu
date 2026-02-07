@@ -36,8 +36,10 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       SECRET_KEY: ${SECRET_KEY}
-      DEBUG: "false"
+      DEBUG: ${DEBUG:-false}
       ENV: ${ENV:-prod}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@localhost}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       CORS_ORIGINS: ${CORS_ORIGINS}
       GENAI_PROVIDER: ${GENAI_PROVIDER:-ollama}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}

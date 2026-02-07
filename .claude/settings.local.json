@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker:*)",
+      "Bash(start \"\" \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\")",
+      "Bash(timeout:*)",
+      "Bash(while true)",
+      "Bash(do sleep 10)",
+      "Bash(break)",
+      "Bash(done)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat\\(jyoti\\): Phase 1 - Backend simplification for Jyoti standalone app\n\n- Remove unused backend modules \\(hunts, reports, connectors, intelligence, analytics, automation, chatbot, iocs, knowledge, guardrails, extraction\\)\n- Simplify FastAPI main.py: remove unused routers, update app description to \"Jyoti - News Feed Aggregator with RBAC\"\n- Simplify database models:\n  * Reduce UserRole enum to ADMIN and USER only\n  * Add OAuth fields to User model \\(oauth_provider, oauth_subject, oauth_email, oauth_picture\\)\n  * Add UserWatchListKeyword model for per-user watchlists\n  * Add DefaultFeedSource model for admin-managed default feeds\n  * Add relationships to User and FeedSource models\n- Simplify RBAC system:\n  * Reduce permissions to essential Jyoti features only\n  * Update role-permission mappings for ADMIN and USER roles\n- Update requirements.txt:\n  * Add authlib==1.3.0 for OAuth 2.0 support\n  * Remove unused dependencies \\(celery, apscheduler, slack-sdk, opentelemetry-*, google-generativeai, anthropic, sentence-transformers, numpy, scikit-learn\\)\n  * Keep openai for article summarization only\n\nThis commit establishes the foundation for Jyoti as a lightweight news feed aggregator with RBAC, separate from the Parshu threat intelligence platform.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat\\(jyoti\\): Phase 2 - OAuth integration for Google and Microsoft login\n\n- Create OAuth service \\(backend/app/auth/oauth.py\\):\n  * Configure authlib OAuth client for Google and Microsoft\n  * Load client credentials from environment variables\n  * Support OpenID Connect discovery\n\n- Add OAuth routes \\(backend/app/routers/__init__.py\\):\n  * GET /{provider}/login - Initiates OAuth flow for google/microsoft\n  * GET /{provider}/callback - Handles OAuth callback\n  * Auto-creates users on first OAuth login with UserRole.USER\n  * Auto-subscribes new users to default feeds\n  * Generates JWT tokens and redirects to frontend with tokens\n\n- Update user registration:\n  * Auto-subscribe new email/password users to default feeds\n  * Set default role to UserRole.USER for Jyoti\n\n- Add OAuth configuration to .env.example:\n  * GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET\n  * MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET\n  * FRONTEND_URL for OAuth redirect\n\nUsers can now sign in with Google or Microsoft accounts in addition to email/password authentication.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(python -m alembic revision:*)",
+      "Bash(chmod:*)"
+    ]
+  }
+}

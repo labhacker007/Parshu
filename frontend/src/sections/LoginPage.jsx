@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Lock, Mail, ArrowRight, Sparkles, Bot, Zap } from 'lucide-react';
+import { Shield, Lock, Mail, ArrowRight, Sparkles, Bot, Zap, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../store';
 import { authAPI } from '../api/client';
 import { initTheme, applyTheme, getAllThemes, getCurrentTheme } from '../themes';
@@ -10,6 +10,7 @@ export function LoginPage({ onLogin }) {
   const { setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [stats, setStats] = useState({ threats: 0, hunts: 0, iocs: 0 });
@@ -78,8 +79,8 @@ export function LoginPage({ onLogin }) {
               <Shield className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">SENTINEL</h1>
-              <p className="text-xs text-white/70">AI-Powered Threat Intelligence</p>
+              <h1 className="text-xl font-bold tracking-tight">HUNTSPHERE</h1>
+              <p className="text-xs text-white/70">Continuous AI-Powered TI to Hunt</p>
             </div>
           </div>
 
@@ -132,8 +133,8 @@ export function LoginPage({ onLogin }) {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white">SENTINEL</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">AI-Powered Threat Intelligence</p>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-white">HUNTSPHERE</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Continuous AI-Powered TI to Hunt</p>
             </div>
           </div>
 
@@ -175,13 +176,24 @@ export function LoginPage({ onLogin }) {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="w-full pl-11 pr-12 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -201,7 +213,7 @@ export function LoginPage({ onLogin }) {
           </form>
 
           <p className="text-center text-xs text-slate-400 dark:text-slate-600 mt-8">
-            © 2024 Sentinel. All rights reserved.
+            © 2026 HuntSphere. All rights reserved.
           </p>
         </div>
       </div>
