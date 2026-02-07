@@ -196,6 +196,14 @@ app.include_router(admin_router)
 from app.users.feeds import router as user_feeds_router
 app.include_router(user_feeds_router)
 
+# User Watchlist
+from app.users.watchlist import router as user_watchlist_router
+app.include_router(user_watchlist_router)
+
+# Admin Default Feeds
+from app.admin.default_feeds import router as default_feeds_router
+app.include_router(default_feeds_router)
+
 # Source Refresh Settings
 from app.integrations.refresh_settings import router as refresh_settings_router
 app.include_router(refresh_settings_router)
