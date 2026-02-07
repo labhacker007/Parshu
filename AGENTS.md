@@ -1,4 +1,4 @@
-# CLAUDE.md - HuntSphere Codebase Guide
+# AGENTS.md - HuntSphere Codebase Guide
 
 ## Project Overview
 
