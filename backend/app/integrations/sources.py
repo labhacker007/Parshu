@@ -440,11 +440,7 @@ def ingest_feed_sync(db: Session, source: FeedSource) -> IngestionResult:
             db.add(article)
             db.flush()  # Get article ID for extraction
             
-            extraction_text = f"{entry['title']}
-
-{entry.get('summary', '')}
-
-{entry.get('raw_content', '')}"
+            extraction_text = f"{entry['title']}\n\n{entry.get('summary', '')}\n\n{entry.get('raw_content', '')}"
             source_url = entry.get("url") or source.url
 
             try:

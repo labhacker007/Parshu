@@ -4,122 +4,36 @@ from app.models import UserRole
 
 
 class Permission(str, Enum):
-    """Fine-grained permissions tied to roles."""
+    """Fine-grained permissions for Jyoti - News Feed Aggregator."""
     # Articles
     READ_ARTICLES = "read:articles"
-    TRIAGE_ARTICLES = "triage:articles"
-    ANALYZE_ARTICLES = "analyze:articles"
-    CREATE_SUMMARY = "create:summary"
-    
-    # Hunts
-    READ_HUNTS = "read:hunts"
-    CREATE_HUNTS = "create:hunts"
-    EXECUTE_HUNTS = "execute:hunts"
-    MANAGE_HUNTS = "manage:hunts"
-    
-    # Intelligence
-    READ_INTELLIGENCE = "read:intelligence"
-    EXTRACT_INTELLIGENCE = "extract:intelligence"
-    
-    # Reports
-    READ_REPORTS = "read:reports"
-    CREATE_REPORTS = "create:reports"
-    EDIT_REPORTS = "edit:reports"
-    PUBLISH_REPORTS = "publish:reports"
-    SHARE_REPORTS = "share:reports"
-    
+
     # Sources
     READ_SOURCES = "read:sources"
-    MANAGE_SOURCES = "manage:sources"
-    
+    MANAGE_SOURCES = "manage:sources"  # Admin only
+
+    # Watchlist
+    MANAGE_GLOBAL_WATCHLIST = "manage:global_watchlist"  # Admin only
+    MANAGE_USER_WATCHLIST = "manage:user_watchlist"  # All users
+
+    # User Feeds
+    MANAGE_USER_FEEDS = "manage:user_feeds"  # All users
+
     # Admin
-    MANAGE_USERS = "manage:users"
-    MANAGE_CONNECTORS = "manage:connectors"
-    VIEW_AUDIT_LOGS = "view:audit_logs"
-    MANAGE_WATCHLISTS = "manage:watchlists"
-    MANAGE_GENAI = "manage:genai"
-    MANAGE_KNOWLEDGE = "manage:knowledge"
-    MANAGE_RBAC = "manage:rbac"
-    
-    # Analytics
-    VIEW_ANALYTICS = "view:analytics"
-    
-    # GenAI Testing
-    TEST_GENAI = "test:genai"
-    VIEW_GENAI = "view:genai"
+    MANAGE_USERS = "manage:users"  # Admin only
+    VIEW_AUDIT_LOGS = "view:audit_logs"  # Admin only
 
 
 ROLE_PERMISSIONS = {
+    # ADMIN: Full access to all features
     UserRole.ADMIN: [p.value for p in Permission],  # All permissions
-    
-    # EXECUTIVE: C-Suite, CISO - read-only access to reports and dashboards
-    UserRole.EXECUTIVE: [
+
+    # USER: Standard user with personal feeds and watchlist management
+    UserRole.USER: [
         Permission.READ_ARTICLES.value,
-        Permission.READ_REPORTS.value,
-        Permission.READ_HUNTS.value,
         Permission.READ_SOURCES.value,
-        Permission.READ_INTELLIGENCE.value,
-        # Executives can view but not modify
-    ],
-    
-    # MANAGER: Team leads - reports, metrics, and limited team oversight
-    UserRole.MANAGER: [
-        Permission.READ_ARTICLES.value,
-        Permission.TRIAGE_ARTICLES.value,
-        Permission.READ_REPORTS.value,
-        Permission.CREATE_REPORTS.value,
-        Permission.SHARE_REPORTS.value,
-        Permission.READ_HUNTS.value,
-        Permission.READ_SOURCES.value,
-        Permission.READ_INTELLIGENCE.value,
-        Permission.VIEW_AUDIT_LOGS.value,  # Managers can view audit logs for their team
-    ],
-    
-    # TI: Threat Intelligence Analyst - full article analysis and reporting
-    UserRole.TI: [
-        Permission.READ_ARTICLES.value,
-        Permission.TRIAGE_ARTICLES.value,
-        Permission.ANALYZE_ARTICLES.value,
-        Permission.CREATE_SUMMARY.value,
-        Permission.READ_INTELLIGENCE.value,
-        Permission.EXTRACT_INTELLIGENCE.value,
-        Permission.READ_REPORTS.value,
-        Permission.CREATE_REPORTS.value,
-        Permission.EDIT_REPORTS.value,
-        Permission.PUBLISH_REPORTS.value,
-        Permission.SHARE_REPORTS.value,
-        Permission.READ_HUNTS.value,
-        Permission.CREATE_HUNTS.value,
-        Permission.READ_SOURCES.value,
-    ],
-    
-    # TH: Threat Hunter - hunt creation and execution
-    UserRole.TH: [
-        Permission.READ_ARTICLES.value,
-        Permission.READ_HUNTS.value,
-        Permission.CREATE_HUNTS.value,
-        Permission.EXECUTE_HUNTS.value,
-        Permission.MANAGE_HUNTS.value,
-        Permission.READ_INTELLIGENCE.value,
-        Permission.READ_REPORTS.value,
-        Permission.READ_SOURCES.value,
-    ],
-    
-    # IR: Incident Response - hunt execution and report sharing
-    UserRole.IR: [
-        Permission.READ_ARTICLES.value,
-        Permission.READ_HUNTS.value,
-        Permission.EXECUTE_HUNTS.value,
-        Permission.READ_INTELLIGENCE.value,
-        Permission.READ_REPORTS.value,
-        Permission.SHARE_REPORTS.value,
-        Permission.READ_SOURCES.value,
-    ],
-    
-    # VIEWER: Very limited read-only access - only news/feeds and chatbot
-    UserRole.VIEWER: [
-        Permission.READ_ARTICLES.value,  # Needed to view feed items
-        Permission.READ_SOURCES.value,   # Needed to see feed sources list
+        Permission.MANAGE_USER_WATCHLIST.value,
+        Permission.MANAGE_USER_FEEDS.value,
     ],
 }
 

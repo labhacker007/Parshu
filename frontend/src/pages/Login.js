@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Form, Input, Button, Alert, Spin, Typography } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  LoginOutlined, 
+import {
+  LoginOutlined,
   LockOutlined,
   SafetyOutlined,
   EyeOutlined,
   EyeInvisibleOutlined,
   CheckCircleFilled,
   SafetyCertificateFilled,
-  LockFilled
+  LockFilled,
+  GoogleOutlined,
+  WindowsOutlined
 } from '@ant-design/icons';
 import { authAPI } from '../api/client';
 import { useAuthStore } from '../store/index';
@@ -413,13 +415,36 @@ function Login() {
     checkSaml();
   }, []);
 
+  // Handle OAuth callback tokens
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+      // OAuth login successful - store tokens and redirect
+      setTokens(accessToken, refreshToken);
+
+      // Fetch user info
+      authAPI.me().then(resp => {
+        setUser(resp.data);
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+        navigate('/news');
+      }).catch(err => {
+        console.error('Failed to fetch user info after OAuth login:', err);
+        setError('Authentication successful but failed to load user profile. Please try again.');
+      });
+    }
+  }, [setTokens, setUser, navigate]);
+
   const handleSubmit = async (values) => {
     setLoading(true);
     setError('');
 
     try {
       const response = await authAPI.login({
-        username: values.username,
+        email: values.username,  // Backend expects 'email' field but accepts username or email
         password: values.password,
       });
 
@@ -491,10 +516,10 @@ function Login() {
         <div className="login-brand">
           <ParshuLogo size={56} color={accentColor} />
           <Title level={3} className="brand-title" style={{ color: currentTheme.colors.textPrimary }}>
-            Parshu
+            HuntSphere
           </Title>
           <Text className="brand-subtitle" style={{ color: currentTheme.colors.textSecondary }}>
-            Threat Intelligence Platform
+            Continuous AI-Powered TI to Hunt
           </Text>
         </div>
 
@@ -539,6 +564,69 @@ function Login() {
             className="login-form"
             layout="vertical"
           >
+            {/* OAuth Login Buttons */}
+            <Form.Item style={{ marginBottom: 12 }}>
+              <Button
+                size="large"
+                block
+                icon={<GoogleOutlined />}
+                onClick={() => {
+                  window.location.href = `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/auth/google/login`;
+                }}
+                style={{
+                  background: currentTheme.colors.mode === 'dark' ? 'rgba(255,255,255,0.05)' : '#ffffff',
+                  borderColor: currentTheme.colors.borderDefault,
+                  color: currentTheme.colors.textPrimary,
+                  boxShadow: `0 2px 8px ${currentTheme.colors.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)'}`,
+                }}
+              >
+                Sign in with Google
+              </Button>
+            </Form.Item>
+
+            <Form.Item style={{ marginBottom: 12 }}>
+              <Button
+                size="large"
+                block
+                icon={<WindowsOutlined />}
+                onClick={() => {
+                  window.location.href = `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/auth/microsoft/login`;
+                }}
+                style={{
+                  background: currentTheme.colors.mode === 'dark' ? 'rgba(255,255,255,0.05)' : '#ffffff',
+                  borderColor: currentTheme.colors.borderDefault,
+                  color: currentTheme.colors.textPrimary,
+                  boxShadow: `0 2px 8px ${currentTheme.colors.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)'}`,
+                }}
+              >
+                Sign in with Microsoft
+              </Button>
+            </Form.Item>
+
+            {/* Divider */}
+            <div style={{
+              textAlign: 'center',
+              margin: '24px 0',
+              position: 'relative'
+            }}>
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: '50%',
+                borderTop: `1px solid ${currentTheme.colors.borderDefault}`,
+              }} />
+              <span style={{
+                position: 'relative',
+                background: currentTheme.colors.backgroundPrimary,
+                padding: '0 16px',
+                color: currentTheme.colors.textMuted,
+                fontSize: '14px',
+              }}>
+                OR
+              </span>
+            </div>
+
             <Form.Item
               name="username"
               rules={[{ required: true, message: 'Please enter your username' }]}
@@ -643,7 +731,7 @@ function Login() {
         {/* Footer */}
         <div className="login-footer">
           <Text style={{ color: currentTheme.colors.textMuted }}>
-            © 2024 Parshu. All rights reserved.
+            © 2026 HuntSphere. All rights reserved.
           </Text>
         </div>
       </div>

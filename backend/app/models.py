@@ -29,13 +29,8 @@ class HuntTriggerType(str, Enum):
 
 
 class UserRole(str, Enum):
-    ADMIN = "ADMIN"
-    EXECUTIVE = "EXECUTIVE"  # C-Suite, CISO - read-only reports and dashboards
-    MANAGER = "MANAGER"  # Team leads - reports, metrics, and team oversight
-    TI = "TI"  # Threat Intelligence Analyst
-    TH = "TH"  # Threat Hunter
-    IR = "IR"  # Incident Response
-    VIEWER = "VIEWER"
+    ADMIN = "ADMIN"  # Full access: manage sources, users, global watchlist
+    USER = "USER"    # Standard user: view feeds, manage personal feeds/watchlist
 
 
 class ExtractedIntelligenceType(str, Enum):
@@ -69,25 +64,36 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     username = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=True)  # Null if SAML auth
+    hashed_password = Column(String, nullable=True)  # Null if OAuth/SAML auth
     full_name = Column(String, nullable=True)
-    role = Column(SQLEnum(UserRole), default=UserRole.VIEWER, nullable=False)  # Primary role
-    
+    role = Column(SQLEnum(UserRole), default=UserRole.USER, nullable=False)  # Primary role
+
     # Multiple roles support - JSON array of additional roles
     # e.g., ["TI", "TH"] means user has TI and TH in addition to primary role
     additional_roles = Column(JSON, default=[])
-    
+
     # Custom per-user permission overrides
     # Format: {"grant": ["view:hunts", "execute:hunts"], "deny": ["manage:users"]}
     # grant: permissions given even if role doesn't have them
     # deny: permissions revoked even if role has them
     custom_permissions = Column(JSON, default={"grant": [], "deny": []})
-    
+
     is_active = Column(Boolean, default=True)
+
+    # SAML authentication
     is_saml_user = Column(Boolean, default=False)
     saml_nameid = Column(String, nullable=True, unique=True)
+
+    # OAuth authentication
+    oauth_provider = Column(String, nullable=True)  # "google", "microsoft", None
+    oauth_subject = Column(String, nullable=True, unique=True)  # OAuth user ID
+    oauth_email = Column(String, nullable=True)
+    oauth_picture = Column(String, nullable=True)  # Profile picture URL
+
+    # Two-factor authentication
     otp_enabled = Column(Boolean, default=False)
     otp_secret = Column(String, nullable=True)
+
     last_login = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -99,6 +105,7 @@ class User(Base):
     )
     audit_events = relationship("AuditLog", back_populates="user")
     hunt_executions = relationship("HuntExecution", back_populates="executed_by")
+    watchlist_keywords = relationship("UserWatchListKeyword", back_populates="user", cascade="all, delete-orphan")
     
     def get_all_roles(self) -> list:
         """Get all roles for this user (primary + additional)."""
@@ -132,6 +139,7 @@ class FeedSource(Base):
     
     articles = relationship("Article", back_populates="feed_source")
     user_preferences = relationship("UserSourcePreference", back_populates="source", cascade="all, delete-orphan")
+    default_settings = relationship("DefaultFeedSource", back_populates="source", cascade="all, delete-orphan")
     
     __table_args__ = (
         Index("idx_feed_source_active", "is_active"),
@@ -288,12 +296,49 @@ class ExtractedIntelligence(Base):
 
 class WatchListKeyword(Base):
     __tablename__ = "watchlist_keywords"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     keyword = Column(String, unique=True, index=True, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class UserWatchListKeyword(Base):
+    """User-specific watchlist keywords (in addition to global)."""
+    __tablename__ = "user_watchlist_keywords"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    keyword = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="watchlist_keywords")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "keyword", name="uq_user_watchlist_keyword"),
+        Index("idx_user_watchlist_user", "user_id"),
+    )
+
+
+class DefaultFeedSource(Base):
+    """Admin-defined default feed sources for new users."""
+    __tablename__ = "default_feed_sources"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source_id = Column(Integer, ForeignKey("feed_sources.id", ondelete="CASCADE"), nullable=False)
+    is_default = Column(Boolean, default=True)  # Auto-subscribe new users
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    source = relationship("FeedSource", back_populates="default_settings")
+    created_by = relationship("User")
+
+    __table_args__ = (
+        Index("idx_default_feed_source", "source_id"),
+    )
 
 
 class Hunt(Base):

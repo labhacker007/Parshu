@@ -1,6 +1,7 @@
-"""Auth API endpoints for login, token management, and SAML."""
-from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+"""Auth API endpoints for login, token management, OAuth, and SAML."""
+from datetime import timedelta, datetime
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
@@ -14,9 +15,11 @@ from app.auth.security import (
     DUMMY_PASSWORD_HASH,
 )
 from app.auth.dependencies import get_current_user
-from app.models import User
+from app.models import User, UserRole, DefaultFeedSource, UserFeed
 from app.audit.manager import AuditManager
 from app.core.logging import logger
+from authlib.integrations.starlette_client import OAuthError
+from app.auth.oauth import oauth
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -48,15 +51,33 @@ def register(user_create: UserCreate, db: Session = Depends(get_db)):
         username=user_create.username,
         hashed_password=hash_password(user_create.password),
         full_name=user_create.full_name,
+        role=UserRole.USER,  # Default role for Jyoti
         is_saml_user=False
     )
-    
+
     db.add(user)
     db.commit()
     db.refresh(user)
-    
-    logger.info("user_registered", user_id=user.id, username=user.username)
-    
+
+    # Auto-subscribe to default feeds
+    defaults = db.query(DefaultFeedSource).filter(
+        DefaultFeedSource.is_default == True
+    ).all()
+
+    for default in defaults:
+        user_feed = UserFeed(
+            user_id=user.id,
+            name=default.source.name,
+            url=default.source.url,
+            feed_type=default.source.feed_type,
+            is_active=True
+        )
+        db.add(user_feed)
+
+    db.commit()
+
+    logger.info("user_registered", user_id=user.id, username=user.username, default_feeds_count=len(defaults))
+
     return user
 
 
@@ -167,6 +188,121 @@ def refresh_token(refresh_request: TokenRefreshRequest):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token"
         )
+
+
+@router.get("/{provider}/login")
+async def oauth_login(provider: str, request: Request):
+    """Initiate OAuth login flow for Google or Microsoft."""
+    if provider not in ['google', 'microsoft']:
+        raise HTTPException(status_code=400, detail="Invalid OAuth provider. Use 'google' or 'microsoft'.")
+
+    client = oauth.create_client(provider)
+    redirect_uri = request.url_for('oauth_callback', provider=provider)
+    return await client.authorize_redirect(request, redirect_uri)
+
+
+@router.get("/{provider}/callback")
+async def oauth_callback(
+    provider: str,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Handle OAuth callback and create/login user."""
+    if provider not in ['google', 'microsoft']:
+        raise HTTPException(status_code=400, detail="Invalid OAuth provider")
+
+    try:
+        client = oauth.create_client(provider)
+        token = await client.authorize_access_token(request)
+        user_info = token.get('userinfo')
+
+        if not user_info:
+            raise HTTPException(status_code=400, detail="Failed to retrieve user info from OAuth provider")
+
+        # Extract user details
+        oauth_subject = user_info['sub']
+        email = user_info.get('email')
+        full_name = user_info.get('name')
+        picture = user_info.get('picture')
+
+        if not email or not oauth_subject:
+            raise HTTPException(status_code=400, detail="Email not provided by OAuth provider")
+
+        # Find or create user
+        user = db.query(User).filter(User.oauth_subject == oauth_subject).first()
+
+        if not user:
+            # Check if email already exists with different auth method
+            existing_email = db.query(User).filter(User.email == email).first()
+            if existing_email:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Email {email} is already registered with a different login method. Please use your original login method."
+                )
+
+            # Create new user
+            user = User(
+                email=email,
+                username=email.split('@')[0],  # Generate username from email
+                full_name=full_name,
+                oauth_provider=provider,
+                oauth_subject=oauth_subject,
+                oauth_email=email,
+                oauth_picture=picture,
+                role=UserRole.USER,  # Default role
+                is_active=True,
+                hashed_password=None  # OAuth users don't have passwords
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+            # Auto-subscribe to default feeds
+            defaults = db.query(DefaultFeedSource).filter(
+                DefaultFeedSource.is_default == True
+            ).all()
+
+            for default in defaults:
+                user_feed = UserFeed(
+                    user_id=user.id,
+                    name=default.source.name,
+                    url=default.source.url,
+                    feed_type=default.source.feed_type,
+                    is_active=True
+                )
+                db.add(user_feed)
+            db.commit()
+
+            logger.info("oauth_user_created", user_id=user.id, provider=provider, default_feeds_count=len(defaults))
+
+        # Generate JWT tokens
+        access_token = create_access_token({"sub": str(user.id)})
+        refresh_token = create_refresh_token({"sub": str(user.id)})
+
+        # Update last login
+        user.last_login = datetime.utcnow()
+        db.commit()
+
+        # Audit log
+        AuditManager.log_login(db, user.id, saml=False)
+
+        logger.info("oauth_login_success", user_id=user.id, provider=provider)
+
+        # Redirect to frontend with tokens
+        frontend_url = settings.FRONTEND_URL or "http://localhost:3000"
+        redirect_url = (
+            f"{frontend_url}/login"
+            f"?access_token={access_token}"
+            f"&refresh_token={refresh_token}"
+        )
+        return RedirectResponse(redirect_url)
+
+    except OAuthError as e:
+        logger.error("oauth_error", provider=provider, error=str(e))
+        raise HTTPException(status_code=400, detail=f"OAuth authentication failed: {str(e)}")
+    except Exception as e:
+        logger.error("oauth_callback_error", provider=provider, error=str(e))
+        raise HTTPException(status_code=500, detail="OAuth authentication failed")
 
 
 @router.get("/me", response_model=UserResponse)
