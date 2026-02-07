@@ -1,4 +1,4 @@
-# Parshu Enhancement - Quick Summary
+# HuntSphere Enhancement - Quick Summary
 
 ## What's Being Changed
 

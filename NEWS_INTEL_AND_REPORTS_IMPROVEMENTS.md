@@ -389,7 +389,7 @@ A: Not yet, but this is planned for the next iteration.
 ### **If Feed Page Doesn't Load**
 ```bash
 # Check frontend logs
-docker logs orion-frontend-1 2>&1 | tail -50
+docker logs huntsphere-frontend-1 2>&1 | tail -50
 
 # Restart frontend
 docker-compose restart frontend
@@ -407,14 +407,14 @@ Cmd+Shift+R (Mac) or Ctrl+Shift+R (Windows)
 ### **If Version Control Not Working**
 ```bash
 # Run migration
-docker exec orion-backend-1 alembic upgrade head
+docker exec huntsphere-backend-1 alembic upgrade head
 
 # Check if table exists
-docker exec orion-postgres-1 psql -U orion_user -d orion_db \
+docker exec huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db \
   -c "\dt report_versions"
 
 # Check backend logs
-docker logs orion-backend-1 2>&1 | grep -i version
+docker logs huntsphere-backend-1 2>&1 | grep -i version
 ```
 
 ---

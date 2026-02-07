@@ -1,10 +1,10 @@
 ╔══════════════════════════════════════════════════════════════════════╗
-║                   Parshu - QUICK START GUIDE                         ║
+║                   HuntSphere - QUICK START GUIDE                         ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 🚀 START APPLICATION
 ────────────────────────────────────────────────────────────────────────
-cd orion
+cd huntsphere
 docker compose up -d
 
 ⏱️  WAIT 30 SECONDS FOR SERVICES TO START

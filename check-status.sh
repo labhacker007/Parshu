@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Parshu Status Check Script
+# HuntSphere Status Check Script
 # Run this to diagnose why the application isn't loading data
 
 echo "========================================"
-echo "  Parshu Platform Status Check"
+echo "  HuntSphere Platform Status Check"
 echo "========================================"
 echo ""
 
@@ -80,7 +80,7 @@ echo "  Summary"
 echo "========================================"
 echo ""
 echo "If Backend is NOT running, start with:"
-echo "  cd /Users/tarun_vashishth/Documents/Code/orion"
+echo "  cd /Users/tarun_vashishth/Documents/Code/huntsphere"
 echo "  docker-compose up -d"
 echo ""
 echo "Or view logs with:"

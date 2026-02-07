@@ -7,7 +7,7 @@ function uniqueName(prefix = 'e2e-connector') {
 test('admin can create, test, and delete connector', async ({ page }) => {
   // Login as admin
   await page.goto('/login');
-  await page.fill('input[placeholder="analyst@example.com"]', 'admin@orion.local');
+  await page.fill('input[placeholder="analyst@example.com"]', 'admin@huntsphere.local');
   await page.fill('input[placeholder="Password"]', 'Admin@123');
   await page.click('button:has-text("Login")');
   await page.waitForURL('**/articles', { timeout: 5000 });

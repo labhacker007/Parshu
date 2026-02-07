@@ -590,7 +590,7 @@ pip install sentence-transformers==2.2.2 numpy==1.24.3 scikit-learn==1.3.2
 
 ```bash
 # Backup database first!
-pg_dump orion > backup_before_agentic_$(date +%Y%m%d).sql
+pg_dump huntsphere > backup_before_agentic_$(date +%Y%m%d).sql
 
 # Run migration
 alembic upgrade head

@@ -101,7 +101,7 @@ async def validate_feed_url(
         # Fetch the URL
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             response = await client.get(url, headers={
-                'User-Agent': 'Parshu Feed Reader/1.0'
+                'User-Agent': 'HuntSphere Feed Reader/1.0'
             })
         
         if response.status_code != 200:

@@ -35,7 +35,7 @@ const { Title, Text, Paragraph } = Typography;
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 // Unified Documentation Component - combines Help, Docs, and Architecture
-function ParshuDocumentation({ setActiveTab, availableModels }) {
+function HuntSphereDocumentation({ setActiveTab, availableModels }) {
   const [aiQuestion, setAiQuestion] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -74,7 +74,7 @@ function ParshuDocumentation({ setActiveTab, availableModels }) {
       } else {
         // Provide helpful fallback response based on question
         const fallbackResponses = {
-          'ollama': 'To set up Ollama:\n1. Install Ollama: brew install ollama (Mac) or follow docs.ollama.ai\n2. Start Ollama: ollama serve\n3. Pull a model: ollama pull llama3\n4. In Parshu Admin → Configuration, set Ollama URL to http://host.docker.internal:11434 (if using Docker)',
+          'ollama': 'To set up Ollama:\n1. Install Ollama: brew install ollama (Mac) or follow docs.ollama.ai\n2. Start Ollama: ollama serve\n3. Pull a model: ollama pull llama3\n4. In HuntSphere Admin → Configuration, set Ollama URL to http://host.docker.internal:11434 (if using Docker)',
           'servicenow': 'To configure ServiceNow:\n1. Go to Admin → Configuration → Notifications\n2. Enter your ServiceNow instance URL\n3. Add username and password for API access\n4. Test the connection\n5. Enable "Create tickets on hunt failure" in Automation settings',
           'hunt': 'Hunt query troubleshooting:\n1. Check if platform connector is configured (Admin → Configuration)\n2. Verify API credentials are valid\n3. Ensure article has extracted IOCs\n4. Review Audit Logs for specific errors\n5. Try Preview Query first before executing',
           'feed': 'Feed/RSS troubleshooting:\n1. Verify feed URL is valid (test in browser)\n2. Check Sources page - is the feed active?\n3. Manually click "Fetch Feeds" to test\n4. Check Scheduler is running in Admin → Scheduler\n5. Review backend logs for parsing errors',
@@ -104,7 +104,7 @@ function ParshuDocumentation({ setActiveTab, availableModels }) {
       key: 'getting-started',
       title: 'Getting Started', 
       desc: 'Initial setup and configuration',
-      content: 'Welcome to Parshu! Start by:\n1. Setting up GenAI (Admin → Configuration → GenAI)\n2. Adding RSS feed sources (Sources page)\n3. Configuring hunt platform connectors\n4. Creating user accounts with appropriate roles'
+      content: 'Welcome to HuntSphere! Start by:\n1. Setting up GenAI (Admin → Configuration → GenAI)\n2. Adding RSS feed sources (Sources page)\n3. Configuring hunt platform connectors\n4. Creating user accounts with appropriate roles'
     },
     { 
       key: 'genai',
@@ -222,7 +222,7 @@ function ParshuDocumentation({ setActiveTab, availableModels }) {
                     }
                   >
                     <Paragraph type="secondary">
-                      Ask questions about Parshu configuration, troubleshooting, or how to use features.
+                      Ask questions about HuntSphere configuration, troubleshooting, or how to use features.
                     </Paragraph>
                     
                     <Input.TextArea 
@@ -464,7 +464,7 @@ function Admin() {
   
   // Company branding settings for reports
   const [companyBranding, setCompanyBranding] = useState(() => {
-    const saved = localStorage.getItem('orion-company-branding');
+    const saved = localStorage.getItem('huntsphere-company-branding');
     return saved ? JSON.parse(saved) : {
       company_name: '',
       company_logo_url: '',
@@ -950,7 +950,7 @@ function Admin() {
       };
       
       // Save to localStorage for now (could also save to backend)
-      localStorage.setItem('orion-company-branding', JSON.stringify(brandingData));
+      localStorage.setItem('huntsphere-company-branding', JSON.stringify(brandingData));
       setCompanyBranding(brandingData);
       
       // Also save to backend SystemConfiguration if available
@@ -1529,7 +1529,7 @@ function Admin() {
                               content: (
                                 <div>
                                   <p><strong>Current Version:</strong> {settings.app_version}</p>
-                                  <p><strong>Application:</strong> Parshu Threat Intelligence Platform</p>
+                                  <p><strong>Application:</strong> HuntSphere Threat Intelligence Platform</p>
                                   <p style={{ marginTop: 16 }}>Check the repository for the latest releases and changelog.</p>
                                 </div>
                               )
@@ -1910,7 +1910,7 @@ function Admin() {
                     
                     <Title level={5} style={{ color: '#fa8c16' }}>⚠️ Important: Docker Networking</Title>
                     <Paragraph>
-                      <strong>Parshu runs in Docker.</strong> This means "localhost" inside Parshu refers to the container itself,
+                      <strong>HuntSphere runs in Docker.</strong> This means "localhost" inside HuntSphere refers to the container itself,
                       NOT your host machine where Ollama runs. Use the correct URL:
                     </Paragraph>
                     
@@ -1956,7 +1956,7 @@ function Admin() {
                           description: <Text code>ollama pull llama3:latest</Text>
                         },
                         {
-                          title: 'Configure in Parshu',
+                          title: 'Configure in HuntSphere',
                           description: (
                             <div>
                               URL: <Text code>http://host.docker.internal:11434</Text>
@@ -1970,7 +1970,7 @@ function Admin() {
                     
                     <Divider style={{ margin: '12px 0' }} />
                     
-                    <Title level={5}>How Parshu Uses Ollama</Title>
+                    <Title level={5}>How HuntSphere Uses Ollama</Title>
                     <List 
                       size="small"
                       dataSource={[
@@ -2717,7 +2717,7 @@ function Admin() {
     {
       key: 'documentation',
       label: <span><BookOutlined /> Documentation</span>,
-      children: <ParshuDocumentation setActiveTab={setActiveTab} availableModels={availableModels} />,
+      children: <HuntSphereDocumentation setActiveTab={setActiveTab} availableModels={availableModels} />,
     },
   ];
 
@@ -2756,7 +2756,7 @@ function Admin() {
                 <Tag color="blue">PostgreSQL</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Database Name">
-                {settings?.database_name || 'orion'}
+                {settings?.database_name || 'huntsphere'}
               </Descriptions.Item>
               <Descriptions.Item label="Status">
                 {health?.checks?.database?.status === 'healthy' ? (

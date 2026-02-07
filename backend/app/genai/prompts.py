@@ -1,5 +1,5 @@
 """
-Centralized Prompt Management System for Parshu GenAI Functions.
+Centralized Prompt Management System for HuntSphere GenAI Functions.
 
 This module provides:
 - Expert persona definitions for cybersecurity contexts
@@ -1473,7 +1473,7 @@ Assist the user with threat intelligence analysis, security queries, and platfor
 {kb_context}
 
 === CURRENT CONTEXT ===
-The user is working in the Parshu Threat Intelligence Platform.
+The user is working in the HuntSphere Threat Intelligence Platform.
 {current_context}
 
 === GUARDRAILS ===

@@ -1,4 +1,4 @@
-# Parshu Requirements Checklist (Last 20 User Inputs)
+# HuntSphere Requirements Checklist (Last 20 User Inputs)
 
 ## ADMIN PORTAL
 
@@ -87,7 +87,7 @@
 
 ## CHATBOT
 
-### 11. Parshu AI Chatbot
+### 11. HuntSphere AI Chatbot
 - [x] Uses GenAI provider (Ollama/OpenAI/Anthropic)
 - [x] Uses knowledge base via RAG
 - [x] Applies guardrails to responses

@@ -1,4 +1,4 @@
-# Parshu - Implementation Complete ✅
+# HuntSphere - Implementation Complete ✅
 
 ## Summary
 

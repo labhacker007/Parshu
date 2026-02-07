@@ -1,4 +1,4 @@
 #!/bin/bash
 # Double-click this file to start Threat Intelligence Platform
 cd "$(dirname "$0")"
-./start-orion.sh
+./start-huntsphere.sh

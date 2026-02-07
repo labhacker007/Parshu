@@ -134,7 +134,7 @@ $ curl -X POST http://localhost:8000/auth/login \
     "refresh_token": "eyJhbGci...",
     "user": {
         "id": 1,
-        "email": "admin@orion.local",
+        "email": "admin@huntsphere.local",
         "username": "admin",
         "role": "ADMIN",
         "is_active": true
@@ -146,7 +146,7 @@ $ curl -X POST http://localhost:8000/auth/login \
 The returned token includes enhanced security claims:
 - `jti` - JWT ID for tracking
 - `iss` - Issuer (Threat Intelligence Platform)
-- `aud` - Audience (orion-api)
+- `aud` - Audience (huntsphere-api)
 - `iat` - Issued at timestamp
 - `nbf` - Not before timestamp
 - `exp` - Expiration timestamp

@@ -66,7 +66,7 @@ DEBUG=false
 SECRET_KEY=<32+ character secure random string>
 POSTGRES_USER=secure_user
 POSTGRES_PASSWORD=<secure password>
-POSTGRES_DB=orion_production
+POSTGRES_DB=huntsphere_production
 
 docker-compose up -d
 # Will fail if using default SECRET_KEY

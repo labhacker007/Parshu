@@ -1,8 +1,8 @@
-# CLAUDE.md - Parshu Codebase Guide
+# CLAUDE.md - HuntSphere Codebase Guide
 
 ## Project Overview
 
-Parshu is an enterprise-grade Threat Intelligence Platform built for security teams.
+HuntSphere is an enterprise-grade Threat Intelligence Platform built for security teams.
 It ingests threat intelligence from RSS/Atom feeds, extracts IOCs/IOAs/TTPs using GenAI,
 enables threat hunting across multiple security platforms (XSIAM, Defender, Wiz, Splunk),
 and generates shareable reports - all with RBAC and full audit logging.
@@ -12,7 +12,7 @@ and generates shareable reports - all with RBAC and full audit logging.
 ## Repository Structure
 
 ```
-Parshu/
+HuntSphere/
 ├── backend/              # FastAPI (Python 3.11) API server
 │   ├── app/              # Application package
 │   │   ├── main.py       # FastAPI app entry point, middleware, router registration

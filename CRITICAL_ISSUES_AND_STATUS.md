@@ -1,4 +1,4 @@
-# Parshu Platform - Critical Issues & Status Report
+# HuntSphere Platform - Critical Issues & Status Report
 
 **Date:** 2026-01-23  
 **System Status:** All containers healthy but critical functional issues
@@ -273,12 +273,12 @@
 
 ### Check Article Count in Database
 ```bash
-docker exec Parshu-postgres-1 psql -U Parshu_user -d Parshu_db -c "SELECT status, COUNT(*) FROM articles GROUP BY status;"
+docker exec huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db -c "SELECT status, COUNT(*) FROM articles GROUP BY status;"
 ```
 
 ### Check Intelligence Records
 ```bash
-docker exec Parshu-postgres-1 psql -U Parshu_user -d Parshu_db -c "SELECT COUNT(*) FROM extracted_intelligence;"
+docker exec huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db -c "SELECT COUNT(*) FROM extracted_intelligence;"
 ```
 
 ### Check Ollama Status
@@ -293,7 +293,7 @@ curl -H "Authorization: Bearer <token>" http://localhost:8000/articles/triage-qu
 
 ### Check Backend Logs for Errors
 ```bash
-docker logs Parshu-backend-1 2>&1 | grep -i error | tail -50
+docker logs huntsphere-backend-1 2>&1 | grep -i error | tail -50
 ```
 
 ---
@@ -303,7 +303,7 @@ docker logs Parshu-backend-1 2>&1 | grep -i error | tail -50
 ### Quick Health Check
 ```bash
 # All containers
-docker ps --filter "name=Parshu"
+docker ps --filter "name=huntsphere"
 
 # Backend API health
 curl http://localhost:8000/health
@@ -323,7 +323,7 @@ docker-compose restart backend
 
 ### Database Access
 ```bash
-docker exec -it Parshu-postgres-1 psql -U Parshu_user -d Parshu_db
+docker exec -it huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db
 ```
 
 ---

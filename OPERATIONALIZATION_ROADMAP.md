@@ -1,8 +1,8 @@
-# Parshu Threat Hunting Platform - Operationalization Roadmap
+# HuntSphere Threat Hunting Platform - Operationalization Roadmap
 
 ## Executive Summary
 
-This document outlines the current state of the Parshu platform, identifies gaps, and provides a comprehensive roadmap to transform it into a secure, fully operationalized threat hunting application leveraging GenAI for automated and on-demand threat hunting.
+This document outlines the current state of the HuntSphere platform, identifies gaps, and provides a comprehensive roadmap to transform it into a secure, fully operationalized threat hunting application leveraging GenAI for automated and on-demand threat hunting.
 
 ---
 
@@ -662,7 +662,7 @@ You have a solid foundation with most core features implemented. The main gaps a
 4. **Security hardening** - Production-ready security measures
 5. **Dashboard enhancements** - Better drill-down and filtering
 
-Following this roadmap will transform Parshu into a production-ready, secure, fully operationalized threat hunting platform.
+Following this roadmap will transform HuntSphere into a production-ready, secure, fully operationalized threat hunting platform.
 
 ---
 

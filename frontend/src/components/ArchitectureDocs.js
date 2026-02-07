@@ -20,7 +20,7 @@ const { Panel } = Collapse;
 
 /**
  * Interactive Architecture Documentation Component
- * Provides multi-level views of the Parshu platform architecture
+ * Provides multi-level views of the HuntSphere platform architecture
  */
 const ArchitectureDocs = () => {
   const [activeView, setActiveView] = useState('high-level');
@@ -477,7 +477,7 @@ const ArchitectureDocs = () => {
       <div className="architecture-header">
         <div>
           <Title level={4} style={{ margin: 0 }}>
-            <BulbOutlined /> Parshu Platform Architecture
+            <BulbOutlined /> HuntSphere Platform Architecture
           </Title>
           <Text type="secondary">Interactive documentation and system overview</Text>
         </div>

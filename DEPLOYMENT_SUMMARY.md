@@ -147,7 +147,7 @@ docker-compose up -d frontend
 
 ### Database Migration:
 ```bash
-docker exec orion-postgres-1 psql -U orion_user -d orion_db
+docker exec huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db
 # Created tables: role_permissions, user_permission_overrides
 # Inserted default permissions for all roles
 ```
@@ -159,10 +159,10 @@ docker exec orion-postgres-1 psql -U orion_user -d orion_db
 ```bash
 docker-compose ps
 ```
-- ✅ orion-backend-1: Running (recreated)
-- ✅ orion-frontend-1: Running (recreated)
-- ✅ orion-postgres-1: Running (healthy)
-- ✅ orion-redis-1: Running (healthy)
+- ✅ huntsphere-backend-1: Running (recreated)
+- ✅ huntsphere-frontend-1: Running (recreated)
+- ✅ huntsphere-postgres-1: Running (healthy)
+- ✅ huntsphere-redis-1: Running (healthy)
 
 ---
 
@@ -301,8 +301,8 @@ If issues arise:
 
 For issues or questions:
 1. Check browser console for errors
-2. Review backend logs: `docker logs orion-backend-1`
-3. Review frontend logs: `docker logs orion-frontend-1`
+2. Review backend logs: `docker logs huntsphere-backend-1`
+3. Review frontend logs: `docker logs huntsphere-frontend-1`
 4. Check database connectivity
 5. Verify GenAI status
 

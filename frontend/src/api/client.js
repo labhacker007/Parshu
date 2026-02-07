@@ -576,7 +576,7 @@ export const knowledgeAPI = {
       priority: options.priority || 5
     }),
   
-  // Self-documentation (admin only - creates KB from Parshu codebase)
+  // Self-documentation (admin only - creates KB from HuntSphere codebase)
   selfDocument: (options = {}) =>
     client.post('/knowledge/self-document', null, {
       params: {

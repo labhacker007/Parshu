@@ -24,7 +24,7 @@ function Chatbot() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "👋 Hi! I'm Parshu Assistant, your AI-powered helper for the Parshu Threat Intelligence Platform. I can help you with:\n\n• Navigating platform features\n• Configuring SAML SSO and email notifications\n• Generating hunt queries for Defender, XSIAM, Splunk, Wiz\n• Understanding IOC extraction and MITRE mapping\n• Troubleshooting issues\n\nHow can I help you today?",
+      content: "👋 Hi! I'm HuntSphere Assistant, your AI-powered helper for the HuntSphere Threat Intelligence Platform. I can help you with:\n\n• Navigating platform features\n• Configuring SAML SSO and email notifications\n• Generating hunt queries for Defender, XSIAM, Splunk, Wiz\n• Understanding IOC extraction and MITRE mapping\n• Troubleshooting issues\n\nHow can I help you today?",
       sources: []
     }
   ]);
@@ -119,7 +119,7 @@ function Chatbot() {
         issue_type: issueType,
         context: { messages: messages.slice(-5) }
       });
-      message.success('Feedback submitted! Thank you for helping improve Parshu.');
+      message.success('Feedback submitted! Thank you for helping improve HuntSphere.');
     } catch (err) {
       message.error('Failed to submit feedback');
     }
@@ -301,7 +301,7 @@ function Chatbot() {
   return (
     <>
       {/* Floating Button */}
-      <Tooltip title="Ask Parshu Assistant">
+      <Tooltip title="Ask HuntSphere Assistant">
         <Button
           type="primary"
           shape="circle"
@@ -327,7 +327,7 @@ function Chatbot() {
           <Space>
             <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#52c41a' }} />
             <div>
-              <div style={{ fontWeight: 600 }}>Parshu Assistant</div>
+              <div style={{ fontWeight: 600 }}>HuntSphere Assistant</div>
               <Text type="secondary" style={{ fontSize: 11 }}>AI-powered help</Text>
             </div>
           </Space>
@@ -496,7 +496,7 @@ function Chatbot() {
                       handleSend();
                     }
                   }}
-                  placeholder="Ask me anything about Parshu..."
+                  placeholder="Ask me anything about HuntSphere..."
                   autoSize={{ minRows: 1, maxRows: 4 }}
                   style={{ borderRadius: '8px 0 0 8px' }}
                   disabled={loading}

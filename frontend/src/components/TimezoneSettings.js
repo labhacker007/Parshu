@@ -179,7 +179,7 @@ export const TimezoneSettings = ({ compact = false }) => {
         <div className="tz-info">
           <Text type="secondary" style={{ fontSize: 11 }}>
             <GlobalOutlined style={{ marginRight: 4 }} />
-            Preferences are saved locally and apply to all time displays in Parshu.
+            Preferences are saved locally and apply to all time displays in HuntSphere.
           </Text>
         </div>
       </Space>

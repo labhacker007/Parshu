@@ -368,7 +368,7 @@ Example Response:
 ## 🚀 How to Use
 
 ### Access Guardrails Manager
-1. Login to Parshu
+1. Login to HuntSphere
 2. Go to Admin → Guardrails
 3. View all 50 guardrails
 4. Filter by category/severity/platform

@@ -602,7 +602,7 @@ function NavBar() {
         </div>
       )}
       
-      <Header className="orion-navbar" style={{ 
+      <Header className="huntsphere-navbar" style={{ 
         display: 'flex', 
         alignItems: 'center', 
         padding: '0 24px',
@@ -623,7 +623,7 @@ function NavBar() {
           fontSize: 20,
           ...(isDark ? { filter: 'drop-shadow(0 0 8px var(--primary))' } : {}),
         }} />
-        <span>Parshu</span>
+        <span>HuntSphere</span>
       </div>
       
       {user && (

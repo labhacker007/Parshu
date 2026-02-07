@@ -119,7 +119,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Parshu - Threat Intelligence & Hunt Platform API",
+    description="HuntSphere - Threat Intelligence & Hunt Platform API",
     lifespan=lifespan
 )
 

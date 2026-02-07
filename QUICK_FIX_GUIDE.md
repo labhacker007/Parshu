@@ -79,11 +79,11 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 **Admin Access to Database:**
 ```bash
 # View articles
-docker exec -it orion-postgres-1 psql -U orion_user -d orion_db \
+docker exec -it huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db \
   -c "SELECT id, title, status FROM articles LIMIT 10;"
 
 # View intelligence
-docker exec -it orion-postgres-1 psql -U orion_user -d orion_db \
+docker exec -it huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db \
   -c "SELECT article_id, intelligence_type, value FROM extracted_intelligence LIMIT 10;"
 ```
 
@@ -183,7 +183,7 @@ curl http://localhost:8000/articles/intelligence/all?page=1&page_size=100 | jq
 ### Option 2: Use Database Directly
 ```bash
 # Login to database
-docker exec -it orion-postgres-1 psql -U orion_user -d orion_db
+docker exec -it huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db
 
 # View articles
 SELECT id, title, status, is_high_priority FROM articles LIMIT 20;

@@ -644,13 +644,13 @@ Response:
 ### Logs to Check
 ```bash
 # Backend logs
-docker logs orion-backend-1
+docker logs huntsphere-backend-1
 
 # Frontend logs
-docker logs orion-frontend-1
+docker logs huntsphere-frontend-1
 
 # Database
-docker exec orion-postgres-1 psql -U orion_user -d orion_db
+docker exec huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db
 ```
 
 ---

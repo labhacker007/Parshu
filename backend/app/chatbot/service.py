@@ -179,8 +179,8 @@ class DocumentStore:
         return results[:limit]
 
 
-class ParshuChatbot:
-    """AI-powered chatbot for Parshu platform assistance with RAG and Guardrails."""
+class HuntSphereChatbot:
+    """AI-powered chatbot for HuntSphere platform assistance with RAG and Guardrails."""
     
     def __init__(self, db_session=None):
         self.document_store = DocumentStore()
@@ -221,7 +221,7 @@ class ParshuChatbot:
         # Get guardrails from the prompts system
         guardrails = get_chatbot_guardrails()
         
-        base_prompt = """You are Parshu Assistant, an AI-powered helper for the Parshu Threat Intelligence Platform.
+        base_prompt = """You are HuntSphere Assistant, an AI-powered helper for the HuntSphere Threat Intelligence Platform.
 
 === YOUR ROLE ===
 You are a senior cybersecurity expert with deep knowledge in:
@@ -577,19 +577,19 @@ If you used information from the knowledge base, mention the source."""
 
 
 # Global chatbot instance
-_chatbot_instance: Optional[ParshuChatbot] = None
+_chatbot_instance: Optional[HuntSphereChatbot] = None
 
-def get_chatbot(db_session=None) -> ParshuChatbot:
+def get_chatbot(db_session=None) -> HuntSphereChatbot:
     """Get or create chatbot instance, optionally with a database session for RAG."""
     global _chatbot_instance
     if _chatbot_instance is None:
-        _chatbot_instance = ParshuChatbot(db_session=db_session)
+        _chatbot_instance = HuntSphereChatbot(db_session=db_session)
     elif db_session:
         # Update the db session for RAG support
         _chatbot_instance.db_session = db_session
     return _chatbot_instance
 
 
-def create_chatbot_with_rag(db_session) -> ParshuChatbot:
+def create_chatbot_with_rag(db_session) -> HuntSphereChatbot:
     """Create a new chatbot instance with RAG support (for request-scoped usage)."""
-    return ParshuChatbot(db_session=db_session)
+    return HuntSphereChatbot(db_session=db_session)

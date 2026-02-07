@@ -22,7 +22,7 @@ const { Dragger } = Upload;
 
 // Fallback guide content in case API fails
 const DEFAULT_GUIDE = {
-  title: "Parshu RAG (Retrieval-Augmented Generation) Guide",
+  title: "HuntSphere RAG (Retrieval-Augmented Generation) Guide",
   version: "1.0",
   quick_start: [
     "Navigate to the Upload tab",

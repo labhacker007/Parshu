@@ -31,7 +31,7 @@ from app.models import User, Article, IOC  # IOC from models, not models_agentic
 ✅ Health Check: {"status": "healthy", "version": "0.1.0"}
 ✅ Login Test: SUCCESS
 ✅ Token Generated: Valid JWT with all claims
-✅ User Returned: admin@orion.local
+✅ User Returned: admin@huntsphere.local
 ```
 
 **Login Credentials:**

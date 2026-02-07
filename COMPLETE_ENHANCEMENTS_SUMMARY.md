@@ -1,4 +1,4 @@
-# 🚀 Complete Parshu Enhancements - Final Implementation
+# 🚀 Complete HuntSphere Enhancements - Final Implementation
 
 **Date:** 2026-01-23  
 **Status:** ✅ ALL FEATURES DEPLOYED AND READY  
@@ -566,16 +566,16 @@ BEFORE → AFTER
 ### **Duplicate Detection Not Working**
 ```bash
 # Check if duplicate_checker is imported
-docker logs Parshu-backend-1 2>&1 | grep "duplicate"
+docker logs huntsphere-backend-1 2>&1 | grep "duplicate"
 
 # Check for errors during ingestion
-docker logs Parshu-backend-1 2>&1 | grep "duplicate_check_failed"
+docker logs huntsphere-backend-1 2>&1 | grep "duplicate_check_failed"
 
 # Verify DuplicateChecker class exists
-docker exec Parshu-backend-1 ls -la /app/app/articles/duplicate_checker.py
+docker exec huntsphere-backend-1 ls -la /app/app/articles/duplicate_checker.py
 
 # Test manually
-docker exec -it Parshu-backend-1 python
+docker exec -it huntsphere-backend-1 python
 >>> from app.articles.duplicate_checker import DuplicateChecker
 >>> # Should not error
 ```
@@ -583,14 +583,14 @@ docker exec -it Parshu-backend-1 python
 ### **Version Control Not Saving**
 ```bash
 # Check if table exists
-docker exec Parshu-postgres-1 psql -U Parshu_user -d Parshu_db \
+docker exec huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db \
   -c "\dt report_versions"
 
 # If not, run migration
-docker exec Parshu-backend-1 alembic upgrade head
+docker exec huntsphere-backend-1 alembic upgrade head
 
 # Check backend logs
-docker logs Parshu-backend-1 2>&1 | grep "version"
+docker logs huntsphere-backend-1 2>&1 | grep "version"
 ```
 
 ### **Unified User Management Not Showing**
@@ -774,10 +774,10 @@ docker-compose up -d frontend
 **Questions or issues?** Check the troubleshooting section or examine the logs:
 ```bash
 # Backend logs
-docker logs Parshu-backend-1 2>&1 | tail -100
+docker logs huntsphere-backend-1 2>&1 | tail -100
 
 # Frontend logs
-docker logs Parshu-frontend-1 2>&1 | tail -100
+docker logs huntsphere-frontend-1 2>&1 | tail -100
 
 # Check container health
 docker ps

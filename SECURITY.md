@@ -1,4 +1,4 @@
-# Security Policy - Parshu Platform
+# Security Policy - HuntSphere Platform
 
 **Last Updated:** January 27, 2026  
 **Version:** 1.0
@@ -20,7 +20,7 @@
 
 ## Security Overview
 
-Parshu is a threat intelligence platform designed with security as a top priority. This document outlines the security measures implemented and best practices for secure deployment.
+HuntSphere is a threat intelligence platform designed with security as a top priority. This document outlines the security measures implemented and best practices for secure deployment.
 
 ### Security Principles
 
@@ -419,7 +419,7 @@ CORS_ORIGINS=https://yourdomain.com
 
 ## Acknowledgments
 
-We thank the security community for responsible disclosure and helping keep Parshu secure.
+We thank the security community for responsible disclosure and helping keep HuntSphere secure.
 
 ---
 

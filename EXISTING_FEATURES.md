@@ -1,8 +1,8 @@
-# Parshu Platform - Existing Features Summary
+# HuntSphere Platform - Existing Features Summary
 
 ## 📊 **Overview of Built-In Features**
 
-This document summarizes **ALL existing features** found in the Parshu codebase that are ready for admin configuration.
+This document summarizes **ALL existing features** found in the HuntSphere codebase that are ready for admin configuration.
 
 ---
 
@@ -202,7 +202,7 @@ This document summarizes **ALL existing features** found in the Parshu codebase 
 - `SMTP_USER` - Authentication username
 - `SMTP_PASSWORD` - Authentication password
 - `SMTP_FROM_EMAIL` - Sender email address
-- `SMTP_FROM_NAME` - Sender display name (default: "Parshu Platform")
+- `SMTP_FROM_NAME` - Sender display name (default: "HuntSphere Platform")
 
 **Features:**
 - Hunt result notifications
@@ -402,8 +402,8 @@ Settings can be overridden in `docker-compose.override.yml`
 
 ### **3. Kubernetes ConfigMaps/Secrets**
 For production deployment:
-- `Parshu-config` ConfigMap for non-sensitive settings
-- `Parshu-secrets` Secret for API keys and passwords
+- `huntsphere-config` ConfigMap for non-sensitive settings
+- `huntsphere-secrets` Secret for API keys and passwords
 
 ---
 
@@ -461,5 +461,5 @@ To make these features easily configurable, we need to create:
 ---
 
 **Document Generated:** January 16, 2026  
-**Platform Version:** Parshu v0.1.0  
+**Platform Version:** HuntSphere v0.1.0  
 **Configuration Coverage:** 100% of existing features documented

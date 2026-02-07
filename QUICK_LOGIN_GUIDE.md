@@ -1,4 +1,4 @@
-# Quick Login Guide - Parshu Platform
+# Quick Login Guide - HuntSphere Platform
 
 **Status:** ✅ Login is working!
 

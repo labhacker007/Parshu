@@ -406,7 +406,7 @@ async def generate_hunt_query(self, article_id: int, platform: str, db: Session)
 
 2. **Run Database Fixes**
    ```bash
-   docker exec orion-postgres-1 psql -U orion_user -d orion_db <<EOF
+   docker exec huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db <<EOF
    UPDATE knowledge_documents
    SET status = 'FAILED', processing_error = 'Reset from stuck state'
    WHERE status IN ('PROCESSING', 'CRAWLING') 
@@ -428,7 +428,7 @@ async def generate_hunt_query(self, article_id: int, platform: str, db: Session)
 
 5. **Monitor Logs**
    ```bash
-   docker logs -f orion-backend-1 | grep -i "knowledge\|ioc\|extract"
+   docker logs -f huntsphere-backend-1 | grep -i "knowledge\|ioc\|extract"
    ```
 
 ---

@@ -1,7 +1,7 @@
 # Complete System Deployment - RBAC, News & Intel, Duplicate Detection
 
 **Date:** 2026-01-23  
-**Deployment ID:** Parshu-COMPLETE-002
+**Deployment ID:** huntsphere-COMPLETE-002
 
 ---
 
@@ -18,7 +18,7 @@ Successfully implemented three major enterprise-grade features:
 ## 📋 Feature 1: Comprehensive RBAC System
 
 ### Overview
-Complete permission management system covering every function, page, tab, and action across the entire Parshu platform.
+Complete permission management system covering every function, page, tab, and action across the entire HuntSphere platform.
 
 ### Key Capabilities
 
@@ -698,18 +698,18 @@ curl -X POST http://localhost:8000/guardrails/duplicate-detection/check-article/
 **Logs:**
 ```bash
 # Backend logs
-docker logs Parshu-backend-1
+docker logs huntsphere-backend-1
 
 # Frontend logs
-docker logs Parshu-frontend-1
+docker logs huntsphere-frontend-1
 
 # Database logs
-docker logs Parshu-postgres-1
+docker logs huntsphere-postgres-1
 ```
 
 **Database Access:**
 ```bash
-docker exec -it Parshu-postgres-1 psql -U Parshu_user -d Parshu_db
+docker exec -it huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db
 ```
 
 **Restart Services:**

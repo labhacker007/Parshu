@@ -221,7 +221,7 @@ def enable_otp_setup(
     secret = generate_otp_secret()
     
     # Create TOTP provisioning URI for QR code
-    issuer = settings.APP_NAME or "Parshu"
+    issuer = settings.APP_NAME or "HuntSphere"
     account_name = current_user.email
     totp = pyotp.TOTP(secret)
     provisioning_uri = totp.provisioning_uri(

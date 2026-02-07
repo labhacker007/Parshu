@@ -1,9 +1,9 @@
 apiVersion: namespace
 kind: Namespace
 metadata:
-  name: orion
+  name: huntsphere
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: orion
+  name: huntsphere

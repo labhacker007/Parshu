@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Parshu - Quick Development Startup Script
+# HuntSphere - Quick Development Startup Script
 # This starts the backend with SQLite (no Docker needed)
 
 echo "========================================"
-echo "  Starting Parshu Platform (Dev Mode)"
+echo "  Starting HuntSphere Platform (Dev Mode)"
 echo "========================================"
 echo ""
 
@@ -36,7 +36,7 @@ pip install --upgrade pip -q 2>/dev/null
 pip install -r backend/requirements.txt -q 2>/dev/null || pip install -r backend/requirements.txt
 
 # Set environment variables for SQLite (no PostgreSQL needed)
-export DATABASE_URL="sqlite:///./orion_dev.db"
+export DATABASE_URL="sqlite:///./huntsphere_dev.db"
 export SECRET_KEY="dev-secret-key-change-in-production"
 export CORS_ORIGINS="http://localhost:3000,http://localhost:8000"
 export DEBUG="true"

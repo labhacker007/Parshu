@@ -1,1 +1,1 @@
-"""Parshu Chatbot module for AI-powered assistance."""
+"""HuntSphere Chatbot module for AI-powered assistance."""

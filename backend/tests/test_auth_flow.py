@@ -8,7 +8,7 @@ def test_login_me_and_refresh():
 
     # login
     r = requests.post(f'{base}/auth/login', json={
-        'email': 'admin@orion.local',
+        'email': 'admin@huntsphere.local',
         'password': 'Admin@123'
     })
     assert r.status_code == 200

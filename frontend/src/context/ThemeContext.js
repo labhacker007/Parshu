@@ -25,20 +25,20 @@ const FONT_SIZES = {
 
 export const ThemeProvider = ({ children }) => {
   const [currentThemeId, setCurrentThemeId] = useState(() => {
-    const saved = localStorage.getItem('orion-theme');
+    const saved = localStorage.getItem('huntsphere-theme');
     return saved && themes[saved] ? saved : DEFAULT_THEME;
   });
 
   const [hackerMode, setHackerMode] = useState(() => {
-    return localStorage.getItem('orion-hacker-mode') === 'true';
+    return localStorage.getItem('huntsphere-hacker-mode') === 'true';
   });
 
   const [cyberMode, setCyberMode] = useState(() => {
-    return localStorage.getItem('orion-cyber-mode') === 'true';
+    return localStorage.getItem('huntsphere-cyber-mode') === 'true';
   });
   
   const [fontSizePreference, setFontSizePreference] = useState(() => {
-    const saved = localStorage.getItem('orion-font-size');
+    const saved = localStorage.getItem('huntsphere-font-size');
     return saved && FONT_SIZES[saved] ? saved : 'default';
   });
 
@@ -127,10 +127,10 @@ export const ThemeProvider = ({ children }) => {
     document.body.setAttribute('data-font-size', fontSizePreference);
 
     // Save to localStorage
-    localStorage.setItem('orion-theme', currentThemeId);
-    localStorage.setItem('orion-hacker-mode', hackerMode.toString());
-    localStorage.setItem('orion-cyber-mode', cyberMode.toString());
-    localStorage.setItem('orion-font-size', fontSizePreference);
+    localStorage.setItem('huntsphere-theme', currentThemeId);
+    localStorage.setItem('huntsphere-hacker-mode', hackerMode.toString());
+    localStorage.setItem('huntsphere-cyber-mode', cyberMode.toString());
+    localStorage.setItem('huntsphere-font-size', fontSizePreference);
   }, [currentThemeId, currentTheme, hackerMode, cyberMode, fontSizePreference]);
 
   const setTheme = (themeId) => {

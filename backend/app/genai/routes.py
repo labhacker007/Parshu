@@ -214,8 +214,8 @@ class TroubleshootResponse(BaseModel):
 
 
 # Built-in help documentation
-PARSHU_HELP_DOCS = {
-    "getting-started": """# Getting Started with Parshu
+HUNTSPHERE_HELP_DOCS = {
+    "getting-started": """# Getting Started with HuntSphere
 
 1. **Initial Setup**
    - Configure GenAI provider (Admin → Configuration → GenAI)
@@ -257,7 +257,7 @@ ollama pull mistral
 ollama pull codellama
 ```
 
-**Configure in Parshu:**
+**Configure in HuntSphere:**
 1. Go to Admin → Configuration → GenAI
 2. Set Provider: Ollama
 3. Set Base URL: 
@@ -409,7 +409,7 @@ def find_best_help_match(question: str) -> str:
             best_score = score
             best_match = topic
     
-    return PARSHU_HELP_DOCS.get(best_match, PARSHU_HELP_DOCS["getting-started"])
+    return HUNTSPHERE_HELP_DOCS.get(best_match, HUNTSPHERE_HELP_DOCS["getting-started"])
 
 
 @router.post("/help", response_model=HelpResponse)
@@ -431,7 +431,7 @@ async def get_help(
         # Build context from built-in docs
         relevant_doc = find_best_help_match(request.question)
         
-        prompt = f"""You are Parshu's AI assistant. Help the user with their question about the platform.
+        prompt = f"""You are HuntSphere's AI assistant. Help the user with their question about the platform.
 
 Reference Documentation:
 {relevant_doc}
@@ -451,7 +451,7 @@ suggest where they might find more information or what steps to take.
         
         return HelpResponse(
             answer=response.get("text", relevant_doc),
-            sources=["Parshu Documentation"],
+            sources=["HuntSphere Documentation"],
             model_used=response.get("model")
         )
         

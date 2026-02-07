@@ -5,7 +5,7 @@ BASE = "http://localhost:8000"
 
 
 def login_admin():
-    r = requests.post(f"{BASE}/auth/login", json={"email": "admin@orion.local", "password": "Admin@123"})
+    r = requests.post(f"{BASE}/auth/login", json={"email": "admin@huntsphere.local", "password": "Admin@123"})
     assert r.status_code == 200
     return r.json()['access_token']
 

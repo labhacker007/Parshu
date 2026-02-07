@@ -48,7 +48,7 @@ function Dashboard() {
   const [connectors, setConnectors] = useState([]);
   const [intelStats, setIntelStats] = useState(null);
   const [timeRange, setTimeRange] = useState(() => {
-    return localStorage.getItem('orion-dashboard-time-range') || '24h';
+    return localStorage.getItem('huntsphere-dashboard-time-range') || '24h';
   });
   
   // Simplified refresh settings from hook
@@ -112,7 +112,7 @@ function Dashboard() {
     setSettingsLoading(true);
     try {
       // Load time range from localStorage
-      const savedTimeRange = localStorage.getItem('orion-dashboard-time-range');
+      const savedTimeRange = localStorage.getItem('huntsphere-dashboard-time-range');
       if (savedTimeRange) {
         setTimeRange(savedTimeRange);
       }
@@ -289,7 +289,7 @@ function Dashboard() {
   const handleTimeRangeChange = async (value) => {
     setTimeRange(value);
     // Store in localStorage for persistence
-    localStorage.setItem('orion-dashboard-time-range', value);
+    localStorage.setItem('huntsphere-dashboard-time-range', value);
   };
 
   const getStatusColor = (status) => {
@@ -393,7 +393,7 @@ function Dashboard() {
         <div>
           <Title level={4} className="dashboard-title">
             <ThunderboltOutlined />
-            Parshu Command Center
+            HuntSphere Command Center
           </Title>
           {lastUpdated && (
             <div className="dashboard-subtitle">

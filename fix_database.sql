@@ -1,5 +1,5 @@
 -- Fix missing columns in feed_sources table
--- Run this with: docker-compose exec postgres psql -U orion_user -d orion_db -f /fix_database.sql
+-- Run this with: docker-compose exec postgres psql -U huntsphere_user -d huntsphere_db -f /fix_database.sql
 -- Or connect to PostgreSQL and run these commands manually
 
 -- Add refresh_interval_minutes column

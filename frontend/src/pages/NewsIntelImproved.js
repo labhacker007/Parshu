@@ -54,7 +54,7 @@ const NewsIntelImproved = () => {
   const [sourceForm] = Form.useForm();
 
   useEffect(() => {
-    const saved = localStorage.getItem('orion_starred_articles');
+    const saved = localStorage.getItem('huntsphere_starred_articles');
     if (saved) setStarred(new Set(JSON.parse(saved)));
     fetchData();
   }, []);
@@ -130,7 +130,7 @@ const NewsIntelImproved = () => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      localStorage.setItem('orion_starred_articles', JSON.stringify([...next]));
+      localStorage.setItem('huntsphere_starred_articles', JSON.stringify([...next]));
       return next;
     });
   };

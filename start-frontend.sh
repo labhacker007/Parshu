@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Parshu - Frontend Startup Script
+# HuntSphere - Frontend Startup Script
 
 echo "========================================"
-echo "  Starting Parshu Frontend"
+echo "  Starting HuntSphere Frontend"
 echo "========================================"
 echo ""
 

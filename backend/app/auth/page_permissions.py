@@ -260,7 +260,7 @@ PAGE_DEFINITIONS: Dict[str, PageDefinition] = {
     ),
     "chatbot": PageDefinition(
         page_key="chatbot",
-        page_name="Parshu AI",
+        page_name="HuntSphere AI",
         page_path="/chat",
         description="AI-powered chatbot assistant",
         category="Tools",
@@ -397,7 +397,7 @@ DEFAULT_ROLE_PAGE_PERMISSIONS = {
     "VIEWER": [
         # Feed / News - VIEWER can only access news and feeds
         PagePermission.VIEW_FEED.value,
-        # Chatbot / Parshu AI
+        # Chatbot / HuntSphere AI
         PagePermission.USE_CHATBOT.value,
         PagePermission.VIEW_CHATBOT_HISTORY.value
     ]

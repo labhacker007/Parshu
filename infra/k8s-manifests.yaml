@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: orion-config
-  namespace: orion
+  name: huntsphere-config
+  namespace: huntsphere
 data:
-  DATABASE_URL: postgresql://orion_user:orion_pass@postgres:5432/orion_db
+  DATABASE_URL: postgresql://huntsphere_user:huntsphere_pass@postgres:5432/huntsphere_db
   REDIS_URL: redis://redis:6379/0
   LOG_LEVEL: "INFO"
-  CORS_ORIGINS: "http://localhost:3000,https://orion.example.com"
+  CORS_ORIGINS: "http://localhost:3000,https://huntsphere.example.com"
   JWT_ALGORITHM: "HS256"
   JWT_EXPIRATION_HOURS: "24"
   FEED_CHECK_INTERVAL_MINUTES: "30"
@@ -15,8 +15,8 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: orion-secrets
-  namespace: orion
+  name: huntsphere-secrets
+  namespace: huntsphere
 type: Opaque
 stringData:
   SECRET_KEY: "change-me-in-production"
@@ -31,7 +31,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: orion
+  namespace: huntsphere
 spec:
   replicas: 1
   selector:
@@ -49,14 +49,14 @@ spec:
         - containerPort: 5432
         env:
         - name: POSTGRES_USER
-          value: orion_user
+          value: huntsphere_user
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: orion-secrets
+              name: huntsphere-secrets
               key: SECRET_KEY
         - name: POSTGRES_DB
-          value: orion_db
+          value: huntsphere_db
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
@@ -68,7 +68,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: orion
+  namespace: huntsphere
 spec:
   selector:
     app: postgres
@@ -81,7 +81,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: orion
+  namespace: huntsphere
 spec:
   replicas: 1
   selector:
@@ -102,7 +102,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis
-  namespace: orion
+  namespace: huntsphere
 spec:
   selector:
     app: redis
@@ -115,7 +115,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
-  namespace: orion
+  namespace: huntsphere
 spec:
   replicas: 2
   selector:
@@ -128,15 +128,15 @@ spec:
     spec:
       containers:
       - name: backend
-        image: orion-backend:latest
+        image: huntsphere-backend:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
         envFrom:
         - configMapRef:
-            name: orion-config
+            name: huntsphere-config
         - secretRef:
-            name: orion-secrets
+            name: huntsphere-secrets
         resources:
           requests:
             memory: "256Mi"
@@ -161,7 +161,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend
-  namespace: orion
+  namespace: huntsphere
 spec:
   selector:
     app: backend
@@ -174,7 +174,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: orion
+  namespace: huntsphere
 spec:
   replicas: 2
   selector:
@@ -187,7 +187,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: orion-frontend:latest
+        image: huntsphere-frontend:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
@@ -212,7 +212,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: frontend
-  namespace: orion
+  namespace: huntsphere
 spec:
   selector:
     app: frontend

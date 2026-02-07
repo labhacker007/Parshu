@@ -5,7 +5,7 @@ test('login as admin and see admin nav', async ({ page }) => {
   await page.goto('/login');
 
   // Fill email and password
-  await page.fill('input[placeholder="analyst@example.com"]', 'admin@orion.local');
+  await page.fill('input[placeholder="analyst@example.com"]', 'admin@huntsphere.local');
   await page.fill('input[placeholder="Password"]', 'Admin@123');
 
   // Submit

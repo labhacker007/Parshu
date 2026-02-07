@@ -4,7 +4,7 @@ Revision ID: 017_add_ingested_at
 Revises: 016_guardrails_tables
 Create Date: 2026-01-29
 
-This migration adds a separate ingested_at column to track when Parshu
+This migration adds a separate ingested_at column to track when HuntSphere
 ingested each article, distinct from published_at which is the original
 article publication date from the source.
 """

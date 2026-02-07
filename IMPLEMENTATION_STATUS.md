@@ -1,4 +1,4 @@
-# Parshu Advanced Features - Implementation Status
+# HuntSphere Advanced Features - Implementation Status
 
 ## ✅ Completed (Database & Models)
 

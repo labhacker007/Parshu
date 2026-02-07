@@ -1,7 +1,7 @@
-# Parshu Enhancement Implementation Plan
+# HuntSphere Enhancement Implementation Plan
 
 ## Overview
-This document outlines the comprehensive enhancement plan for the Parshu threat intelligence platform based on user feedback and testing requirements.
+This document outlines the comprehensive enhancement plan for the HuntSphere threat intelligence platform based on user feedback and testing requirements.
 
 ---
 

@@ -264,7 +264,7 @@ If you encounter any issues:
 
 **Check frontend logs:**
 ```bash
-docker logs orion-frontend-1
+docker logs huntsphere-frontend-1
 ```
 
 **Hard refresh in browser:**

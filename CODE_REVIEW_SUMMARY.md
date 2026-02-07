@@ -1,4 +1,4 @@
-# Parshu Platform - Code Review Summary
+# HuntSphere Platform - Code Review Summary
 
 **Review Date:** January 27, 2026  
 **Reviewer:** Senior Full Stack Developer & Security Auditor  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-A comprehensive code review was conducted on the Parshu threat intelligence platform, identifying **47 issues** across security, design, functionality, and code quality. **All critical security vulnerabilities have been fixed**, and the platform is now significantly more secure and ready for continued development.
+A comprehensive code review was conducted on the HuntSphere threat intelligence platform, identifying **47 issues** across security, design, functionality, and code quality. **All critical security vulnerabilities have been fixed**, and the platform is now significantly more secure and ready for continued development.
 
 ### Key Metrics
 
@@ -213,7 +213,7 @@ A comprehensive code review was conducted on the Parshu threat intelligence plat
 
 1. **Backup Database:**
    ```bash
-   pg_dump Parshu > backup_$(date +%Y%m%d).sql
+   pg_dump huntsphere > backup_$(date +%Y%m%d).sql
    ```
 
 2. **Update Code:**
@@ -372,8 +372,8 @@ A comprehensive code review was conducted on the Parshu threat intelligence plat
 ### Tools
 
 - **scripts/generate-secrets.py** - Generate secure secrets
-- **scripts/start-Parshu.sh** - Start services
-- **scripts/stop-Parshu.sh** - Stop services
+- **scripts/start-huntsphere.sh** - Start services
+- **scripts/stop-huntsphere.sh** - Stop services
 
 ### References
 
@@ -386,7 +386,7 @@ A comprehensive code review was conducted on the Parshu threat intelligence plat
 
 ## Conclusion
 
-The Parshu platform has undergone a comprehensive security review and critical vulnerabilities have been addressed. The codebase is now significantly more secure and follows industry best practices. 
+The HuntSphere platform has undergone a comprehensive security review and critical vulnerabilities have been addressed. The codebase is now significantly more secure and follows industry best practices. 
 
 **Key Achievements:**
 - ✅ 12 critical security issues resolved

@@ -30,7 +30,7 @@ def get_ioc_types(
             "types": types,
             "categories": categories,
             "total_types": len(types),
-            "description": "Comprehensive list of all IOC types supported for extraction across the Parshu platform"
+            "description": "Comprehensive list of all IOC types supported for extraction across the HuntSphere platform"
         }
     except Exception as e:
         logger.error("failed_to_get_ioc_types", error=str(e))

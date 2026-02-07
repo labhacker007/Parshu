@@ -414,7 +414,7 @@ Response: {
 
 ### Step 1: Access Testing Lab
 ```
-1. Login to Parshu
+1. Login to HuntSphere
 2. Go to Admin Dashboard
 3. Click "GenAI Testing Lab" tab
 4. You'll see 3 tabs:

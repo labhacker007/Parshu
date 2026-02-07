@@ -1,4 +1,4 @@
-# Orion - Comprehensive .gitignore
+# HuntSphere - Comprehensive .gitignore
 
 # ============================================================================
 # Environment & Secrets
@@ -395,7 +395,7 @@ k8s/secrets/
 *.secret.yaml
 
 # ============================================================================
-# Orion-specific
+# HuntSphere-specific
 # ============================================================================
 # Feed source cache
 backend/cache/feeds/

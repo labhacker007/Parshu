@@ -674,7 +674,7 @@ function Reports() {
         >
           <Alert
             message="Custom reports are auto-generated as professional PDFs"
-            description="When you create a custom report, Parshu will automatically generate and download a professionally formatted PDF document with executive summaries, IOCs, TTPs, and recommendations."
+            description="When you create a custom report, HuntSphere will automatically generate and download a professionally formatted PDF document with executive summaries, IOCs, TTPs, and recommendations."
             type="info"
             showIcon
             icon={<FilePdfOutlined />}

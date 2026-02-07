@@ -46,7 +46,7 @@ const IntelNews = () => {
   // Load starred from localStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('orion_starred_articles');
+      const saved = localStorage.getItem('huntsphere_starred_articles');
       if (saved) {
         setStarred(new Set(JSON.parse(saved)));
       }
@@ -139,7 +139,7 @@ const IntelNews = () => {
         newSet.add(articleId);
       }
       try {
-        localStorage.setItem('orion_starred_articles', JSON.stringify([...newSet]));
+        localStorage.setItem('huntsphere_starred_articles', JSON.stringify([...newSet]));
       } catch (e) {
         console.error('Failed to save starred', e);
       }

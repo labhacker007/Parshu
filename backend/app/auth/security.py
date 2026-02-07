@@ -42,7 +42,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         "nbf": now,  # Not before
         "jti": secrets.token_urlsafe(32),  # JWT ID for tracking/revocation
         "iss": settings.APP_NAME,  # Issuer
-        "aud": "orion-api",  # Audience
+        "aud": "huntsphere-api",  # Audience
     })
     
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
@@ -62,7 +62,7 @@ def create_refresh_token(data: dict) -> str:
         "type": "refresh",
         "jti": secrets.token_urlsafe(32),
         "iss": settings.APP_NAME,
-        "aud": "orion-api"
+        "aud": "huntsphere-api"
     })
     
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
@@ -76,7 +76,7 @@ def decode_token(token: str) -> dict:
             token, 
             settings.SECRET_KEY, 
             algorithms=[settings.JWT_ALGORITHM],
-            audience="orion-api",  # Validate audience
+            audience="huntsphere-api",  # Validate audience
             issuer=settings.APP_NAME,  # Validate issuer
             options={
                 "verify_exp": True,

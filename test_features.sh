@@ -1,12 +1,12 @@
 #!/bin/bash
-# Comprehensive Feature Testing Script for Parshu Platform
+# Comprehensive Feature Testing Script for HuntSphere Platform
 # Tests all implemented features as an expert tester
 
 set -e
 
 API_URL="http://localhost:8000"
 FRONTEND_URL="http://localhost:3000"
-ADMIN_EMAIL="admin@orion.local"
+ADMIN_EMAIL="admin@huntsphere.local"
 ADMIN_PASS="Admin@123"
 
 # Colors for output
@@ -53,7 +53,7 @@ get_token() {
 }
 
 echo "=================================================="
-echo "  PARSHU PLATFORM - COMPREHENSIVE FEATURE TESTING"
+echo "  HUNTSPHERE PLATFORM - COMPREHENSIVE FEATURE TESTING"
 echo "=================================================="
 echo ""
 
@@ -99,7 +99,7 @@ fi
 
 # Test 5: User Management - Create User
 log_info "Test 5: User Management - Create New User"
-test_email="test_user_$RANDOM@orion.local"
+test_email="test_user_$RANDOM@huntsphere.local"
 response=$(curl -s -X POST "${API_URL}/auth/register" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -305,7 +305,7 @@ echo ""
 if [ $FAILED_TESTS -eq 0 ]; then
     echo -e "${GREEN}✓ ALL TESTS PASSED!${NC}"
     echo ""
-    echo "The Parshu platform is functioning correctly."
+    echo "The HuntSphere platform is functioning correctly."
     exit 0
 else
     echo -e "${RED}✗ SOME TESTS FAILED${NC}"

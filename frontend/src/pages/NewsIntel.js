@@ -41,7 +41,7 @@ const NewsIntel = () => {
   const [timeRange, setTimeRange] = useState('today');
 
   useEffect(() => {
-    const saved = localStorage.getItem('orion_starred_articles');
+    const saved = localStorage.getItem('huntsphere_starred_articles');
     if (saved) setStarred(new Set(JSON.parse(saved)));
     fetchData();
   }, []);
@@ -100,7 +100,7 @@ const NewsIntel = () => {
     setStarred(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
-      localStorage.setItem('orion_starred_articles', JSON.stringify([...next]));
+      localStorage.setItem('huntsphere_starred_articles', JSON.stringify([...next]));
       return next;
     });
   };

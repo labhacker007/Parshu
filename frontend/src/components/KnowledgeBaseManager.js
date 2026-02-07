@@ -1068,7 +1068,7 @@ function KnowledgeBaseManager() {
                 <Form form={form} layout="vertical" onFinish={handleGitHubCrawl}>
                   <Alert
                     message="GitHub Repository Crawler"
-                    description="Crawl a GitHub repository to add its code and documentation to the knowledge base. Perfect for adding your organization's internal tools, security projects, or Parshu customizations."
+                    description="Crawl a GitHub repository to add its code and documentation to the knowledge base. Perfect for adding your organization's internal tools, security projects, or HuntSphere customizations."
                     type="info"
                     showIcon
                     style={{ marginBottom: 16 }}
@@ -1093,7 +1093,7 @@ function KnowledgeBaseManager() {
                     label="Title"
                     rules={[{ required: true, message: 'Title is required' }]}
                   >
-                    <Input placeholder="e.g., Parshu Threat Intelligence Platform" />
+                    <Input placeholder="e.g., HuntSphere Threat Intelligence Platform" />
                   </Form.Item>
                   
                   <Form.Item name="description" label="Description">
@@ -1176,7 +1176,7 @@ function KnowledgeBaseManager() {
                       <Option value="github">github</Option>
                       <Option value="code">code</Option>
                       <Option value="internal">internal</Option>
-                      <Option value="orion">orion</Option>
+                      <Option value="huntsphere">huntsphere</Option>
                     </Select>
                   </Form.Item>
                   

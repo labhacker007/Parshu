@@ -1,7 +1,7 @@
 #!/bin/bash
 # Test API endpoints
 
-echo "=== Testing Parshu API ==="
+echo "=== Testing HuntSphere API ==="
 echo ""
 
 echo "1. Health Check:"

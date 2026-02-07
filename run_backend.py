@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple script to run the Parshu backend server.
+Simple script to run the HuntSphere backend server.
 Run this from the project root: python3 run_backend.py
 """
 import os
@@ -12,7 +12,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
 # Set environment variables for SQLite (no PostgreSQL needed)
-os.environ["DATABASE_URL"] = "sqlite:///./backend/orion_dev.db"
+os.environ["DATABASE_URL"] = "sqlite:///./backend/huntsphere_dev.db"
 os.environ["SECRET_KEY"] = "dev-secret-key-change-in-production"
 os.environ["CORS_ORIGINS"] = "http://localhost:3000,http://localhost:8000"
 os.environ["DEBUG"] = "true"
@@ -21,11 +21,11 @@ os.environ["GENAI_PROVIDER"] = "ollama"
 os.environ["OLLAMA_BASE_URL"] = "http://localhost:11434"
 
 print("=" * 50)
-print("  Starting Parshu Backend Server")
+print("  Starting HuntSphere Backend Server")
 print("=" * 50)
 print()
 print(f"  Working directory: {script_dir}")
-print(f"  Database: SQLite (./backend/orion_dev.db)")
+print(f"  Database: SQLite (./backend/huntsphere_dev.db)")
 print(f"  Server URL: http://localhost:8000")
 print(f"  API Docs: http://localhost:8000/docs")
 print()

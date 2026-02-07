@@ -1187,7 +1187,7 @@ async def get_rag_guide(
     Get comprehensive guide for setting up and using the RAG system.
     """
     return {
-        "title": "Parshu RAG (Retrieval-Augmented Generation) Guide",
+        "title": "HuntSphere RAG (Retrieval-Augmented Generation) Guide",
         "version": "1.0",
         "sections": [
             {
@@ -1469,7 +1469,7 @@ async def crawl_github_repo(
     }
 
 
-@router.post("/self-document", summary="Create self-documentation from Parshu codebase")
+@router.post("/self-document", summary="Create self-documentation from HuntSphere codebase")
 async def create_self_documentation(
     background_tasks: BackgroundTasks,
     include_code: bool = True,
@@ -1479,16 +1479,16 @@ async def create_self_documentation(
     db: Session = Depends(get_db)
 ):
     """
-    Create knowledge base documentation from the Parshu application itself.
+    Create knowledge base documentation from the HuntSphere application itself.
     
     This allows the chatbot to answer questions about:
-    - How Parshu works internally
-    - Troubleshooting Parshu issues
-    - Customizing and extending Parshu
-    - Understanding Parshu's architecture
+    - How HuntSphere works internally
+    - Troubleshooting HuntSphere issues
+    - Customizing and extending HuntSphere
+    - Understanding HuntSphere's architecture
     
     Note: This requires the codebase to be accessible from the backend container.
-    For production, use the GitHub crawler with your Parshu fork URL.
+    For production, use the GitHub crawler with your HuntSphere fork URL.
     """
     import os
     from pathlib import Path
@@ -1501,20 +1501,20 @@ async def create_self_documentation(
     if not (base_path / "app").exists():
         raise HTTPException(
             status_code=400,
-            detail="Codebase not accessible. Use GitHub crawler with your Parshu repository URL instead."
+            detail="Codebase not accessible. Use GitHub crawler with your HuntSphere repository URL instead."
         )
     
     # Create document entry
     doc = KnowledgeDocument(
-        title="Parshu Application Documentation (Self-Generated)",
-        description="Auto-generated documentation from the Parshu codebase for admin and engineer support",
+        title="HuntSphere Application Documentation (Self-Generated)",
+        description="Auto-generated documentation from the HuntSphere codebase for admin and engineer support",
         doc_type=KnowledgeDocumentType.PRODUCT_DOCUMENTATION,
         source_type="local",
-        source_url="local://orion-codebase",
+        source_url="local://huntsphere-codebase",
         status=KnowledgeDocumentStatus.PENDING,
         target_functions=["troubleshooting", "configuration", "development", "administration"],
-        target_platforms=["orion"],
-        tags=["orion", "self-documentation", "codebase", "internal"],
+        target_platforms=["huntsphere"],
+        tags=["huntsphere", "self-documentation", "codebase", "internal"],
         priority=9,  # High priority for self-docs
         is_admin_managed=True,
         scope="global",

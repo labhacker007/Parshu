@@ -2,7 +2,7 @@
 
 ## Overview
 
-A comprehensive Role-Based Access Control (RBAC) system has been implemented for the Parshu platform. This system allows administrators to manage permissions at both the role level and individual user level through a user-friendly interface.
+A comprehensive Role-Based Access Control (RBAC) system has been implemented for the HuntSphere platform. This system allows administrators to manage permissions at both the role level and individual user level through a user-friendly interface.
 
 ## Architecture
 
@@ -239,7 +239,7 @@ AuditManager.log_event(
 The migration was applied manually:
 
 ```bash
-docker exec Parshu-postgres-1 psql -U Parshu_user -d Parshu_db
+docker exec huntsphere-postgres-1 psql -U huntsphere_user -d huntsphere_db
 # Tables created: role_permissions, user_permission_overrides
 # Default permissions inserted for all roles
 ```
@@ -361,4 +361,4 @@ The RBAC system provides:
 - ✅ Database-backed persistence
 - ✅ Backward compatible with existing roles
 
-This implementation gives administrators complete control over who can access what functionality in the Parshu platform, with the flexibility to override role defaults for individual users when needed.
+This implementation gives administrators complete control over who can access what functionality in the HuntSphere platform, with the flexibility to override role defaults for individual users when needed.

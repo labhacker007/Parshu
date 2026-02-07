@@ -1,5 +1,5 @@
 """
-Unified Permission System for Parshu Platform.
+Unified Permission System for HuntSphere Platform.
 
 This consolidates all permission definitions into a single source of truth.
 Each role has:

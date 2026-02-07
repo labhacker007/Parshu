@@ -1,4 +1,4 @@
-# Parshu Advanced Features - Phase 1 Complete ✅
+# HuntSphere Advanced Features - Phase 1 Complete ✅
 
 ## Summary
 
@@ -181,8 +181,8 @@ SERVICENOW_ASSIGNMENT_GROUP=security-team
 
 **Email Settings**
 ```bash
-SMTP_FROM_EMAIL=Parshu@yourcompany.com
-SMTP_FROM_NAME=Parshu Platform
+SMTP_FROM_EMAIL=huntsphere@yourcompany.com
+SMTP_FROM_NAME=HuntSphere Platform
 ```
 
 ---
