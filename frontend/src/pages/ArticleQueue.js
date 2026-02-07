@@ -1244,7 +1244,7 @@ const [globalStats, setGlobalStats] = useState({
           renderItem={(source) => (
             <List.Item>
               <List.Item.Meta
-                avatar={<SyncOutlined style={{ fontSize: 20, color: '#52c41a' }} />}
+                avatar={<SyncOutlined style={{ fontSize: 20, color: 'var(--success, #22C55E)' }} />}
                 title={source.name}
                 description={
                   <Space direction="vertical" size={0}>
@@ -1367,7 +1367,7 @@ const [globalStats, setGlobalStats] = useState({
             <>
             {/* Bulk Actions Bar */}
             {selectedRowKeys.length > 0 && (
-              <div style={{ marginBottom: 16, padding: '8px 16px', background: '#e6f7ff', borderRadius: 4 }}>
+              <div style={{ marginBottom: 16, padding: '8px 16px', background: 'var(--info-bg, rgba(59, 130, 246, 0.1))', borderRadius: 4 }}>
                 <Space>
                   <Text strong>{selectedRowKeys.length} article(s) selected</Text>
                   <Divider type="vertical" />
@@ -1459,7 +1459,7 @@ const [globalStats, setGlobalStats] = useState({
         {selectedArticle && (
           <>
             {/* Assignment & Status Section */}
-            <Card size="small" style={{ marginBottom: 16, background: '#f0f2f5' }}>
+            <Card size="small" style={{ marginBottom: 16, background: 'var(--bg-elevated)' }}>
               <Row gutter={16}>
                 <Col span={12}>
               <Space direction="vertical" style={{ width: '100%' }}>
@@ -1664,7 +1664,7 @@ const [globalStats, setGlobalStats] = useState({
                           {selectedArticle.executive_summary ? 'Executive Summary' : 'Feed Description'}
                         </Title>
                         {selectedArticle.executive_summary && (
-                          <Tag color="green" style={{ marginLeft: 8 }}>AI Generated</Tag>
+                          <Tag color="success" style={{ marginLeft: 8 }}>AI Generated</Tag>
                         )}
                       </div>
                       <Card 
@@ -1672,11 +1672,11 @@ const [globalStats, setGlobalStats] = useState({
                         style={{ 
                           marginBottom: 16,
                           background: selectedArticle.executive_summary 
-                            ? 'linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%)' 
-                            : '#f6f8fa',
+                            ? 'var(--success-bg, rgba(34, 197, 94, 0.1))' 
+                            : 'var(--bg-elevated)',
                           border: selectedArticle.executive_summary 
-                            ? '1px solid #91d5ff' 
-                            : '1px solid #e8e8e8'
+                            ? '1px solid var(--success, #22C55E)' 
+                            : '1px solid var(--border-subtle)'
                         }}
                       >
                         {selectedArticle.executive_summary ? (
@@ -1712,7 +1712,7 @@ const [globalStats, setGlobalStats] = useState({
                 children: (
                   <div>
 {/* Model Selection & Extraction Buttons - Clean Professional Layout */}
-                    <Card size="small" style={{ marginBottom: 16, background: 'linear-gradient(135deg, #f6ffed 0%, #f0f5ff 100%)', border: '1px solid #b7eb8f' }}>
+                    <Card size="small" style={{ marginBottom: 16, background: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}>
                       <Row gutter={16} align="middle">
                         <Col flex="auto">
                           <Space direction="vertical" size={8} style={{ width: '100%' }}>
@@ -1728,14 +1728,14 @@ const [globalStats, setGlobalStats] = useState({
                                 <Select.OptGroup label="Local Models">
                                   {availableModels.filter(m => m.type === 'local').map(m => (
                                     <Option key={m.id} value={m.id}>
-                                      <ThunderboltOutlined style={{ color: '#52c41a' }} /> {m.name}
+                                      <ThunderboltOutlined style={{ color: 'var(--success, #22C55E)' }} /> {m.name}
                                     </Option>
                                   ))}
                                 </Select.OptGroup>
                                 <Select.OptGroup label="API Models">
                                   {availableModels.filter(m => m.type === 'api').map(m => (
                                     <Option key={m.id} value={m.id}>
-                                      <RobotOutlined style={{ color: '#1890ff' }} /> {m.name}
+                                      <RobotOutlined style={{ color: 'var(--primary, #3B82F6)' }} /> {m.name}
                                     </Option>
                                   ))}
                                 </Select.OptGroup>
@@ -1950,7 +1950,7 @@ const [globalStats, setGlobalStats] = useState({
                 children: (
                   <div>
                     {/* Actions Bar: Summarization + Export */}
-                    <Card size="small" style={{ marginBottom: 16, background: 'linear-gradient(135deg, #f0f5ff 0%, #e6fffb 100%)', border: '1px solid #adc6ff' }}>
+                    <Card size="small" style={{ marginBottom: 16, background: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}>
                       <Row gutter={16} align="middle">
                         <Col flex="auto">
                           <Space direction="vertical" size={8} style={{ width: '100%' }}>
@@ -1969,14 +1969,14 @@ const [globalStats, setGlobalStats] = useState({
                                   <Select.OptGroup label="Local Models">
                                     {availableModels.filter(m => m.type === 'local').map(m => (
                                       <Option key={m.id} value={m.id}>
-                                        <ThunderboltOutlined style={{ color: '#52c41a' }} /> {m.name}
+                                        <ThunderboltOutlined style={{ color: 'var(--success, #22C55E)' }} /> {m.name}
                                       </Option>
                                     ))}
                                   </Select.OptGroup>
                                   <Select.OptGroup label="API Models">
                                     {availableModels.filter(m => m.type === 'api').map(m => (
                                       <Option key={m.id} value={m.id}>
-                                        <RobotOutlined style={{ color: '#1890ff' }} /> {m.name}
+                                        <RobotOutlined style={{ color: 'var(--primary, #3B82F6)' }} /> {m.name}
                                       </Option>
                                     ))}
                                   </Select.OptGroup>
@@ -2091,11 +2091,11 @@ const [globalStats, setGlobalStats] = useState({
                       style={{ 
                         marginBottom: 16, 
                         background: selectedArticle.executive_summary 
-                          ? 'linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%)' 
-                          : '#fafafa',
+                          ? 'var(--info-bg, rgba(59, 130, 246, 0.1))' 
+                          : 'var(--bg-elevated)',
                         border: selectedArticle.executive_summary 
-                          ? '1px solid #91d5ff' 
-                          : '1px solid #d9d9d9',
+                          ? '1px solid var(--info, #3B82F6)' 
+                          : '1px solid var(--border-default)',
                         borderRadius: 8,
                         overflow: 'hidden'
                       }}
@@ -2108,7 +2108,7 @@ const [globalStats, setGlobalStats] = useState({
                         borderBottom: '2px solid rgba(24, 144, 255, 0.3)'
                       }}>
                         <div style={{ 
-                          background: '#1890ff', 
+                          background: 'var(--info, #3B82F6)', 
                           borderRadius: '50%', 
                           width: 32, 
                           height: 32, 
@@ -2120,7 +2120,7 @@ const [globalStats, setGlobalStats] = useState({
                           <FileSearchOutlined style={{ fontSize: 16, color: 'white' }} />
                         </div>
                         <div>
-                          <Title level={5} style={{ margin: 0, color: '#0050b3' }}>Executive Summary</Title>
+                          <Title level={5} style={{ margin: 0, color: 'var(--info, #3B82F6)' }}>Executive Summary</Title>
                           <Text type="secondary" style={{ fontSize: 11 }}>High-level overview for leadership</Text>
                         </div>
                         {selectedArticle.executive_summary && (
@@ -2154,11 +2154,11 @@ const [globalStats, setGlobalStats] = useState({
                       style={{ 
                         marginBottom: 16, 
                         background: selectedArticle.technical_summary 
-                          ? 'linear-gradient(135deg, #f9f0ff 0%, #fff0f6 100%)' 
-                          : '#fafafa',
+                          ? 'var(--secondary-light, rgba(139, 92, 246, 0.1))' 
+                          : 'var(--bg-elevated)',
                         border: selectedArticle.technical_summary 
-                          ? '1px solid #d3adf7' 
-                          : '1px solid #d9d9d9',
+                          ? '1px solid var(--secondary, #8B5CF6)' 
+                          : '1px solid var(--border-default)',
                         borderRadius: 8,
                         overflow: 'hidden'
                       }}
@@ -2171,7 +2171,7 @@ const [globalStats, setGlobalStats] = useState({
                         borderBottom: '2px solid rgba(114, 46, 209, 0.3)'
                       }}>
                         <div style={{ 
-                          background: '#722ed1', 
+                          background: 'var(--secondary, #8B5CF6)', 
                           borderRadius: '50%', 
                           width: 32, 
                           height: 32, 
@@ -2183,7 +2183,7 @@ const [globalStats, setGlobalStats] = useState({
                           <CodeOutlined style={{ fontSize: 16, color: 'white' }} />
                         </div>
                         <div>
-<Title level={5} style={{ margin: 0, color: '#531dab' }}>Technical Report</Title>
+<Title level={5} style={{ margin: 0, color: 'var(--secondary, #8B5CF6)' }}>Technical Report</Title>
                           <Text type="secondary" style={{ fontSize: 11 }}>Detailed IOCs, TTPs, and technical indicators</Text>
                         </div>
                         {selectedArticle.technical_summary && (
@@ -2230,7 +2230,7 @@ const [globalStats, setGlobalStats] = useState({
                     <Card 
                       size="small" 
                       title={<Space><ThunderboltOutlined /> Launch Hunt</Space>}
-                      style={{ marginBottom: 16, background: '#f0f5ff', border: '1px solid #adc6ff' }}
+                      style={{ marginBottom: 16, background: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
                     >
                       <Space direction="vertical" style={{ width: '100%' }} size={12}>
                         <Row gutter={16} align="middle">
@@ -2303,8 +2303,8 @@ const [globalStats, setGlobalStats] = useState({
                               style={{ 
                                 fontFamily: 'Monaco, Menlo, monospace', 
                                 fontSize: 11,
-                                background: '#1e1e1e',
-                                color: '#d4d4d4'
+                                background: 'var(--bg-elevated)',
+                                color: 'var(--text-secondary)'
                               }}
                             />
                           </div>
@@ -2558,7 +2558,7 @@ const [globalStats, setGlobalStats] = useState({
                 >
                   {availableModels.map(m => (
                     <Option key={m.id} value={m.id}>
-                      {m.type === 'local' ? <ThunderboltOutlined style={{ color: '#52c41a' }} /> : <RobotOutlined style={{ color: '#1890ff' }} />}
+                      {m.type === 'local' ? <ThunderboltOutlined style={{ color: 'var(--success, #22C55E)' }} /> : <RobotOutlined style={{ color: 'var(--primary, #3B82F6)' }} />}
                       {' '}{m.name}
                     </Option>
                   ))}
@@ -2576,7 +2576,7 @@ const [globalStats, setGlobalStats] = useState({
                 >
                   {availableModels.filter(m => m.id !== selectedModel).map(m => (
                     <Option key={m.id} value={m.id}>
-                      {m.type === 'local' ? <ThunderboltOutlined style={{ color: '#52c41a' }} /> : <RobotOutlined style={{ color: '#1890ff' }} />}
+                      {m.type === 'local' ? <ThunderboltOutlined style={{ color: 'var(--success, #22C55E)' }} /> : <RobotOutlined style={{ color: 'var(--primary, #3B82F6)' }} />}
                       {' '}{m.name}
                     </Option>
                   ))}
@@ -2642,7 +2642,7 @@ const [globalStats, setGlobalStats] = useState({
             {/* Model 1 Results */}
             <Col span={12}>
               <Card 
-                title={<Space><RobotOutlined style={{ color: '#722ed1' }} /> {comparisonResults.model1?.model_name || 'Model 1'}</Space>}
+                title={<Space><RobotOutlined style={{ color: 'var(--secondary, #8B5CF6)' }} /> {comparisonResults.model1?.model_name || 'Model 1'}</Space>}
                 size="small"
                 style={{ marginBottom: 16 }}
                 extra={
@@ -2696,7 +2696,7 @@ const [globalStats, setGlobalStats] = useState({
             {/* Model 2 Results */}
             <Col span={12}>
               <Card 
-                title={<Space><RobotOutlined style={{ color: '#1890ff' }} /> {comparisonResults.model2?.model_name || 'Model 2'}</Space>}
+                title={<Space><RobotOutlined style={{ color: 'var(--primary, #3B82F6)' }} /> {comparisonResults.model2?.model_name || 'Model 2'}</Space>}
                 size="small"
                 style={{ marginBottom: 16 }}
                 extra={

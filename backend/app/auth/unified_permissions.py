@@ -1,154 +1,45 @@
 """
 Unified Permission System for Parshu Platform.
 
-This consolidates all permission definitions into a single source of truth.
-Each role has:
-1. Accessible pages (for UI visibility)
-2. API permissions (for backend enforcement)
+This module is consumed by:
+- `/users/my-permissions` (frontend navigation / impersonation support)
+- some admin endpoints that display role capabilities
 
-PRINCIPLE: If you can't see a page, you can't access its APIs.
+To reduce RBAC drift, the data in this module is derived from:
+- `app.auth.page_permissions` (page registry / navigation)
+- `app.auth.rbac` (API permission registry)
 """
-from typing import List, Dict, Set
+from typing import List, Dict
+
 from app.models import UserRole
+from app.auth.page_permissions import PAGE_DEFINITIONS, get_default_page_access_for_role, DEFAULT_ROLE_PAGE_PERMISSIONS
+from app.auth.rbac import get_user_permissions
 
 
-# =============================================================================
-# PAGE DEFINITIONS - What pages exist and their identifiers
-# =============================================================================
-PAGES = {
-    "dashboard": {"name": "Operations", "path": "/dashboard"},
-    "feed": {"name": "News & Feeds", "path": "/news"},
-    "articles": {"name": "Articles", "path": "/articles"},
-    "intelligence": {"name": "Intelligence", "path": "/intelligence"},
-    "hunts": {"name": "Threat Hunts", "path": "/hunts"},
-    "reports": {"name": "Reports", "path": "/reports"},
-    "sources": {"name": "Sources", "path": "/sources"},
-    "watchlist": {"name": "Watchlist", "path": "/watchlist"},
-    "audit": {"name": "Audit Logs", "path": "/audit"},
-    "admin": {"name": "Admin", "path": "/admin"},
-}
+def _build_pages() -> Dict[str, Dict[str, str]]:
+    pages: Dict[str, Dict[str, str]] = {}
+    for key, page_def in PAGE_DEFINITIONS.items():
+        pages[key] = {"name": page_def.page_name, "path": page_def.page_path}
+    return pages
 
 
-# =============================================================================
-# ROLE -> PAGE ACCESS MAPPING
-# This is the SINGLE SOURCE OF TRUTH for what pages each role can access
-# =============================================================================
-ROLE_PAGE_ACCESS: Dict[str, List[str]] = {
-    # ADMIN - Full access to all pages
-    "ADMIN": list(PAGES.keys()),
-    
-    # EXECUTIVE - Read-only access to dashboards and reports
-    "EXECUTIVE": [
-        "dashboard",
-        "reports",
-    ],
-    
-    # MANAGER - Team oversight, reports, and audit
-    "MANAGER": [
-        "dashboard",
-        "feed",
-        "articles",
-        "reports",
-        "audit",
-    ],
-    
-    # TI (Threat Intelligence) - Full intel workflow
-    "TI": [
-        "dashboard",
-        "feed",
-        "articles",
-        "intelligence",
-        "hunts",
-        "reports",
-        "sources",
-        "watchlist",
-    ],
-    
-    # TH (Threat Hunter) - Hunt-focused access
-    "TH": [
-        "dashboard",
-        "feed",
-        "articles",
-        "intelligence",
-        "hunts",
-        "sources",
-    ],
-    
-    # IR (Incident Response) - Response-focused access
-    "IR": [
-        "dashboard",
-        "feed",
-        "articles",
-        "intelligence",
-        "hunts",
-        "reports",
-    ],
-    
-    # VIEWER - Minimal read-only access (News/Feeds only)
-    "VIEWER": [
-        "feed",
-    ],
-}
+def _build_role_page_access() -> Dict[str, List[str]]:
+    access: Dict[str, List[str]] = {}
+    for role in UserRole:
+        access[role.value] = get_default_page_access_for_role(role.value)
+    return access
 
 
-# =============================================================================
-# ROLE -> API PERMISSION MAPPING
-# Maps roles to what API actions they can perform
-# =============================================================================
-ROLE_API_PERMISSIONS: Dict[str, List[str]] = {
-    "ADMIN": [
-        # All permissions
-        "read:*", "write:*", "delete:*", "manage:*",
-    ],
-    
-    "EXECUTIVE": [
-        "read:dashboard",
-        "read:reports",
-    ],
-    
-    "MANAGER": [
-        "read:dashboard",
-        "read:articles",
-        "read:feed",
-        "read:reports",
-        "create:reports",
-        "read:audit",
-    ],
-    
-    "TI": [
-        "read:dashboard",
-        "read:articles", "triage:articles", "analyze:articles",
-        "read:feed",
-        "read:intelligence", "extract:intelligence",
-        "read:hunts", "create:hunts",
-        "read:reports", "create:reports", "share:reports",
-        "read:sources", "manage:sources",
-        "read:watchlist", "manage:watchlist",
-    ],
-    
-    "TH": [
-        "read:dashboard",
-        "read:articles",
-        "read:feed",
-        "read:intelligence",
-        "read:hunts", "create:hunts", "execute:hunts", "manage:hunts",
-        "read:sources",
-    ],
-    
-    "IR": [
-        "read:dashboard",
-        "read:articles", "triage:articles",
-        "read:feed",
-        "read:intelligence",
-        "read:hunts", "execute:hunts",
-        "read:reports", "share:reports",
-    ],
-    
-    "VIEWER": [
-        "read:feed",
-        "read:articles",  # Can read articles in the feed
-    ],
-}
+def _build_role_api_permissions() -> Dict[str, List[str]]:
+    perms: Dict[str, List[str]] = {}
+    for role in UserRole:
+        perms[role.value] = get_user_permissions(role)
+    return perms
+
+
+PAGES = _build_pages()
+ROLE_PAGE_ACCESS = _build_role_page_access()
+ROLE_API_PERMISSIONS = _build_role_api_permissions()
 
 
 def get_role_pages(role: str) -> List[str]:
@@ -160,12 +51,16 @@ def get_role_page_details(role: str) -> List[Dict]:
     """Get detailed page info for a role's accessible pages."""
     page_keys = get_role_pages(role)
     result = []
+    role_page_perms = set(DEFAULT_ROLE_PAGE_PERMISSIONS.get(role, []))
     for key in page_keys:
-        if key in PAGES:
+        if key in PAGES and key in PAGE_DEFINITIONS:
             result.append({
                 "key": key,
                 "name": PAGES[key]["name"],
                 "path": PAGES[key]["path"],
+                # UI-level permissions are derived from the page registry defaults.
+                # These are not used for API enforcement.
+                "permissions": [p for p in PAGE_DEFINITIONS[key].permissions if p in role_page_perms],
             })
     return result
 

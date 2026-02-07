@@ -61,8 +61,10 @@ client.interceptors.response.use(
 );
 
 export const authAPI = {
-  login: (email, password, otp) =>
-    client.post('/auth/login', { email, password, otp }),
+  login: (data) => {
+    // Backend expects {email, password, otp_code?}
+    return client.post('/auth/login', data);
+  },
   register: (email, password, name) =>
     client.post('/auth/register', { email, password, name }),
   refresh: (refreshToken) => client.post('/auth/refresh', { refresh_token: refreshToken }),

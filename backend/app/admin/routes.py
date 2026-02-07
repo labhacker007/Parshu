@@ -1,15 +1,15 @@
 """Admin settings management API endpoints."""
 import json
-import base64
 from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from cryptography.fernet import Fernet
 
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.logging import logger
+from app.core.crypto import decrypt_config_secret, encrypt_config_secret
+from app.core.ssrf import SSRFPolicy, resolve_host_ips, is_ip_allowed, validate_outbound_url
 from app.auth.dependencies import get_current_user, require_permission
 from app.auth.rbac import Permission
 
@@ -26,30 +26,38 @@ from app.audit.manager import AuditManager
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
-# Simple encryption for sensitive values (use proper KMS in production)
-def get_encryption_key():
-    """Get or generate encryption key from secret."""
-    key = settings.SECRET_KEY[:32].ljust(32, '0').encode()
-    return base64.urlsafe_b64encode(key)
-
-
 def encrypt_value(value: str) -> str:
     """Encrypt a sensitive value."""
-    if not value:
-        return value
-    f = Fernet(get_encryption_key())
-    return f.encrypt(value.encode()).decode()
+    return encrypt_config_secret(value)
 
 
-def decrypt_value(encrypted: str) -> str:
+def decrypt_value(encrypted: str) -> Optional[str]:
     """Decrypt a sensitive value."""
-    if not encrypted:
-        return encrypted
+    return decrypt_config_secret(encrypted)
+
+
+def _outbound_host_allowed(host: str) -> bool:
     try:
-        f = Fernet(get_encryption_key())
-        return f.decrypt(encrypted.encode()).decode()
+        ips = resolve_host_ips(host)
     except Exception:
-        return encrypted  # Return as-is if decryption fails
+        return False
+    if not ips:
+        return False
+    for ip in ips:
+        if not is_ip_allowed(ip, allow_private=settings.SSRF_ALLOW_PRIVATE_IPS, allow_loopback=False):
+            return False
+    return True
+
+
+def _validate_ollama_base_url(url: str) -> None:
+    validate_outbound_url(
+        url,
+        policy=SSRFPolicy(
+            allow_private_ips=True,
+            allow_loopback_ips=True,
+            allowed_ports={80, 443, 11434},
+        ),
+    )
 
 
 class SettingsResponse(BaseModel):
@@ -131,7 +139,7 @@ async def seed_database_endpoint(
         logger.error("seed_database_failed", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to seed database: {str(e)}"
+            detail="Failed to seed database"
         )
 
 
@@ -318,7 +326,8 @@ async def admin_health_check(
         db.execute(text("SELECT 1"))
         health["checks"]["database"] = {"status": "healthy"}
     except Exception as e:
-        health["checks"]["database"] = {"status": "unhealthy", "error": str(e)}
+        logger.error("admin_health_database_check_failed", error=str(e))
+        health["checks"]["database"] = {"status": "unhealthy", "error": "check_failed"}
         health["status"] = "degraded"
     
     # Scheduler check
@@ -329,7 +338,8 @@ async def admin_health_check(
             "jobs": len(jobs)
         }
     except Exception as e:
-        health["checks"]["scheduler"] = {"status": "unhealthy", "error": str(e)}
+        logger.error("admin_health_scheduler_check_failed", error=str(e))
+        health["checks"]["scheduler"] = {"status": "unhealthy", "error": "check_failed"}
         health["status"] = "degraded"
     
     # GenAI check
@@ -777,18 +787,23 @@ async def test_configuration(
     
     if category == "notifications":
         # Test SMTP
-        if config_map.get("smtp_host"):
-            try:
-                import smtplib
-                server = smtplib.SMTP(
-                    config_map.get("smtp_host"),
-                    int(config_map.get("smtp_port", 587))
-                )
-                server.ehlo()
-                server.quit()
-                results["tests"].append({"name": "SMTP Connection", "status": "success"})
-            except Exception as e:
-                results["tests"].append({"name": "SMTP Connection", "status": "failed", "error": str(e)})
+        smtp_host = config_map.get("smtp_host")
+        if smtp_host:
+            if not _outbound_host_allowed(smtp_host):
+                results["tests"].append({"name": "SMTP Connection", "status": "failed", "error": "Host not allowed"})
+            else:
+                try:
+                    import smtplib
+                    server = smtplib.SMTP(
+                        smtp_host,
+                        int(config_map.get("smtp_port", 587))
+                    )
+                    server.ehlo()
+                    server.quit()
+                    results["tests"].append({"name": "SMTP Connection", "status": "success"})
+                except Exception as e:
+                    logger.warning("smtp_test_failed", error=str(e))
+                    results["tests"].append({"name": "SMTP Connection", "status": "failed", "error": "failed"})
         
         # Test Slack
         if config_map.get("slack_bot_token"):
@@ -798,7 +813,8 @@ async def test_configuration(
                 client.auth_test()
                 results["tests"].append({"name": "Slack API", "status": "success"})
             except Exception as e:
-                results["tests"].append({"name": "Slack API", "status": "failed", "error": str(e)})
+                logger.warning("slack_test_failed", error=str(e))
+                results["tests"].append({"name": "Slack API", "status": "failed", "error": "failed"})
     
     elif category == "genai":
         provider = config_map.get("provider", settings.GENAI_PROVIDER or "ollama")
@@ -812,7 +828,8 @@ async def test_configuration(
                 client.models.list()
                 results["tests"].append({"name": "OpenAI API", "status": "success"})
             except Exception as e:
-                results["tests"].append({"name": "OpenAI API", "status": "failed", "error": str(e)})
+                logger.warning("openai_test_failed", error=str(e))
+                results["tests"].append({"name": "OpenAI API", "status": "failed", "error": "failed"})
         
         # Test Ollama - use sync httpx to avoid event loop issues
         # Prioritize environment variable for Docker compatibility (host.docker.internal)
@@ -820,6 +837,7 @@ async def test_configuration(
         if ollama_url:
             try:
                 import httpx
+                _validate_ollama_base_url(ollama_url)
                 
                 # Use sync client to avoid event loop conflicts
                 with httpx.Client(timeout=10.0) as http_client:
@@ -831,17 +849,18 @@ async def test_configuration(
                 results["tests"].append({
                     "name": "Ollama Connection", 
                     "status": "success",
-                    "base_url": ollama_url,
                     "available_models": models[:10]
                 })
-            except httpx.ConnectError:
+            except httpx.ConnectError as e:
+                logger.warning("ollama_connect_failed", error=str(e))
                 results["tests"].append({
                     "name": "Ollama Connection", 
                     "status": "failed", 
-                    "error": f"Cannot connect to Ollama at {ollama_url}. Make sure Ollama is running: 'ollama serve'"
+                    "error": "Cannot connect to Ollama. Make sure it is running."
                 })
             except Exception as e:
-                results["tests"].append({"name": "Ollama Connection", "status": "failed", "error": str(e)})
+                logger.warning("ollama_test_failed", error=str(e))
+                results["tests"].append({"name": "Ollama Connection", "status": "failed", "error": "failed"})
         
         # Test Anthropic
         if config_map.get("anthropic_api_key") or settings.ANTHROPIC_API_KEY:
@@ -852,7 +871,8 @@ async def test_configuration(
                 # Just test auth by creating client
                 results["tests"].append({"name": "Anthropic API", "status": "success"})
             except Exception as e:
-                results["tests"].append({"name": "Anthropic API", "status": "failed", "error": str(e)})
+                logger.warning("anthropic_test_failed", error=str(e))
+                results["tests"].append({"name": "Anthropic API", "status": "failed", "error": "failed"})
         
         results["active_provider"] = provider
     
@@ -946,7 +966,7 @@ async def quick_setup_ollama(
             last_error = f"Connection refused at {url}"
             continue
         except Exception as e:
-            last_error = f"Error at {url}: {str(e)}"
+            last_error = f"Error at {url}"
             continue
     
     if not working_url:
@@ -1099,8 +1119,11 @@ async def check_ollama_status(
                     connected_url = url
                     break
         except Exception as e:
-            error_message = str(e)
+            error_message = "Unable to connect to Ollama"
             continue
+
+    if not connected and not error_message:
+        error_message = "Unable to connect to Ollama"
     
     # Recommended models for threat intelligence
     recommended_models = [
@@ -1293,15 +1316,14 @@ async def delete_ollama_model(
         }
     except httpx.HTTPStatusError as e:
         logger.error("ollama_model_delete_failed", model=model_name, status=e.response.status_code, error=str(e))
-        raise HTTPException(
-            status_code=e.response.status_code,
-            detail=f"Failed to delete model: {e.response.text}"
-        )
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Model not found")
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Failed to delete model")
     except Exception as e:
         logger.error("ollama_model_delete_failed", model=model_name, error=str(e))
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to delete model: {str(e)}"
+            detail="Failed to delete model"
         )
 
 
@@ -1356,7 +1378,7 @@ async def get_available_models(
             "models": [],
             "primary_model": settings.GENAI_PROVIDER or "ollama",
             "secondary_model": None,
-            "error": str(e)
+            "error": "failed_to_get_models"
         }
 
 
@@ -1704,7 +1726,7 @@ async def test_genai_generation(
         return {
             "status": "failed",
             "provider": provider,
-            "error": str(e),
+            "error": "genai_test_failed",
             "suggestion": "Make sure your GenAI provider is configured correctly. For Ollama, ensure it's running at the configured URL."
         }
 
@@ -2525,7 +2547,8 @@ async def bulk_guardrail_action(
                 else:
                     results["failed"].append({"id": gid, "reason": "No custom guardrails"})
         except Exception as e:
-            results["failed"].append({"id": gid, "reason": str(e)})
+            logger.error("bulk_guardrail_action_failed", guardrail_id=gid, error=str(e))
+            results["failed"].append({"id": gid, "reason": "failed_to_process"})
     
     # Save overrides
     if request.action in ("enable", "disable"):
@@ -2770,7 +2793,7 @@ def get_all_permissions(
         logger.error("failed_to_get_permissions", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get permissions: {str(e)}"
+            detail="Failed to get permissions"
         )
 
 
@@ -2789,7 +2812,7 @@ def get_all_roles(
         logger.error("failed_to_get_roles", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get roles: {str(e)}"
+            detail="Failed to get roles"
         )
 
 
@@ -2808,7 +2831,7 @@ def get_permission_matrix(
         logger.error("failed_to_get_permission_matrix", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get permission matrix: {str(e)}"
+            detail="Failed to get permission matrix"
         )
 
 
@@ -2855,7 +2878,7 @@ def update_role_permissions(
         logger.error("failed_to_update_role_permissions", role=role, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update role permissions: {str(e)}"
+            detail="Failed to update role permissions"
         )
 
 
@@ -2890,7 +2913,7 @@ def get_user_permission_overrides(
         logger.error("failed_to_get_user_overrides", user_id=user_id, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get user overrides: {str(e)}"
+            detail="Failed to get user overrides"
         )
 
 
@@ -2952,7 +2975,7 @@ def set_user_permission_override(
         logger.error("failed_to_set_user_override", user_id=user_id, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to set user override: {str(e)}"
+            detail="Failed to set user override"
         )
 
 
@@ -2997,7 +3020,7 @@ def remove_user_permission_override(
         logger.error("failed_to_remove_user_override", user_id=user_id, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to remove user override: {str(e)}"
+            detail="Failed to remove user override"
         )
 
 
@@ -3022,7 +3045,7 @@ def get_page_definitions(
         logger.error("failed_to_get_page_definitions", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get page definitions: {str(e)}"
+            detail="Failed to get page definitions"
         )
 
 
@@ -3034,36 +3057,43 @@ def get_role_page_access(
 ):
     """Get which pages and permissions a role has access to.
     
-    Uses the UNIFIED permission system for consistency.
+    Uses the page registry for UI visibility and the RBAC service for persisted role permissions.
     """
-    from app.auth.unified_permissions import PAGES, get_role_pages, get_role_api_permissions
+    from app.admin.rbac_service import RBACService
+    from app.auth.page_permissions import get_all_page_definitions, DEFAULT_ROLE_PAGE_PERMISSIONS
+    from app.auth.rbac import get_user_permissions
     
     try:
         # Validate role
         try:
-            UserRole(role)
+            role_enum = UserRole(role)
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Invalid role: {role}")
-        
-        # Get accessible pages from unified permissions
-        accessible_page_keys = get_role_pages(role)
-        api_permissions = get_role_api_permissions(role)
-        
-        # Build response with all pages and access status
+
+        # Prefer persisted role permissions if available; otherwise fall back to code defaults.
+        persisted = RBACService.get_role_permissions(db, role)
+        if any(str(p).startswith("page:") for p in persisted):
+            effective_page_permissions = set([p for p in persisted if str(p).startswith("page:")])
+        else:
+            effective_page_permissions = set(DEFAULT_ROLE_PAGE_PERMISSIONS.get(role, []))
+
+        page_defs = get_all_page_definitions()
         page_access = []
-        for page_key, page_info in PAGES.items():
-            has_access = page_key in accessible_page_keys
-            
-            page_access.append({
-                "page_key": page_key,
-                "page_name": page_info["name"],
-                "page_path": page_info["path"],
-                "category": "Navigation",
-                "has_access": has_access,
-                "granted_permissions": api_permissions if has_access else [],
-                "all_permissions": api_permissions
-            })
+        for page in page_defs:
+            granted = [p for p in page.permissions if p in effective_page_permissions]
+            page_access.append(
+                {
+                    "page_key": page.page_key,
+                    "page_name": page.page_name,
+                    "page_path": page.page_path,
+                    "category": page.category,
+                    "has_access": len(granted) > 0,
+                    "granted_permissions": granted,
+                    "all_permissions": page.permissions,
+                }
+            )
         
+        api_permissions = get_user_permissions(role_enum)
         return {
             "role": role,
             "pages": page_access,
@@ -3075,7 +3105,7 @@ def get_role_page_access(
         logger.error("failed_to_get_role_page_access", role=role, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get role page access: {str(e)}"
+            detail="Failed to get role page access"
         )
 
 
@@ -3155,7 +3185,7 @@ def update_page_access(
         logger.error("failed_to_update_page_access", page_key=page_key, role=role, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update page access: {str(e)}"
+            detail="Failed to update page access"
         )
 
 
@@ -3178,7 +3208,7 @@ def get_comprehensive_permissions(
         logger.error("failed_to_get_comprehensive_permissions", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get permissions: {str(e)}"
+            detail="Failed to get permissions"
         )
 
 
@@ -3197,7 +3227,7 @@ def get_functional_areas(
         logger.error("failed_to_get_functional_areas", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get functional areas: {str(e)}"
+            detail="Failed to get functional areas"
         )
 
 
@@ -3225,7 +3255,7 @@ def get_comprehensive_role_permissions(
         logger.error("failed_to_get_comprehensive_role_permissions", role=role, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get role permissions: {str(e)}"
+            detail="Failed to get role permissions"
         )
 
 
@@ -3278,7 +3308,7 @@ def update_comprehensive_role_permissions(
         logger.error("failed_to_update_comprehensive_role_permissions", role=role, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update role permissions: {str(e)}"
+            detail="Failed to update role permissions"
         )
 
 

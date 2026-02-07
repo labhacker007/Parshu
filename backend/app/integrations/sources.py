@@ -1,8 +1,13 @@
 """Feed sources management APIs with synchronous ingestion."""
 import asyncio
+from pathlib import Path
+from urllib.parse import urlparse
+from uuid import uuid4
+
+from bs4 import BeautifulSoup
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from app.core.database import get_db
 from app.auth.dependencies import get_current_user, require_permission
 from app.auth.rbac import Permission
@@ -10,8 +15,13 @@ from app.models import FeedSource, Article, ArticleStatus, User, WatchListKeywor
 from app.ingestion.parser import FeedParser
 from app.extraction.extractor import IntelligenceExtractor
 from app.core.logging import logger
+from app.genai.provider import get_model_manager
+from app.core.fetch import safe_fetch_text_sync, FetchError
+from app.core.ssrf import ssrf_policy_from_settings
+from app.knowledge.service import DocumentProcessor, KNOWLEDGE_STORAGE_PATH
 from pydantic import BaseModel, HttpUrl
-from typing import List, Optional
+import hashlib
+from typing import List, Optional, Tuple, Dict
 from datetime import datetime
 import re
 
@@ -83,6 +93,151 @@ def await_or_run(coro):
         return asyncio.run(coro)
 
 
+CUSTOM_FEED_DIR = Path(KNOWLEDGE_STORAGE_PATH) / "custom_feeds"
+CUSTOM_FEED_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _extract_title_from_html(html: str) -> Optional[str]:
+    """Extract <title> from HTML content."""
+    try:
+        soup = BeautifulSoup(html, "html.parser")
+        title_tag = soup.title
+        if title_tag and title_tag.string:
+            return title_tag.string.strip()
+    except Exception:
+        pass
+    return None
+
+
+def _persist_extracted_intelligence(
+    db: Session,
+    article_id: int,
+    extracted: Dict[str, List],
+    method: str
+) -> None:
+    """Persist extracted IOCs/TTPs/ATLAS/IOAs."""
+    for ioc in extracted.get("iocs", []):
+        value = ioc.get("value")
+        if not value:
+            continue
+        intel = ExtractedIntelligence(
+            article_id=article_id,
+            intelligence_type=ExtractedIntelligenceType.IOC,
+            value=value,
+            confidence=ioc.get("confidence", 85),
+            evidence=ioc.get("evidence"),
+            meta={"type": ioc.get("type"), "source": method}
+        )
+        db.add(intel)
+
+    for ttp in extracted.get("ttps", []):
+        mitre_id = ttp.get("mitre_id")
+        if not mitre_id:
+            continue
+        intel = ExtractedIntelligence(
+            article_id=article_id,
+            intelligence_type=ExtractedIntelligenceType.TTP,
+            value=ttp.get("name") or mitre_id,
+            mitre_id=mitre_id,
+            confidence=ttp.get("confidence", 85),
+            evidence=ttp.get("evidence"),
+            meta={"source": method}
+        )
+        db.add(intel)
+
+    for atlas in extracted.get("atlas", []):
+        atlas_id = atlas.get("mitre_id") or atlas.get("value")
+        if not atlas_id:
+            continue
+        intel = ExtractedIntelligence(
+            article_id=article_id,
+            intelligence_type=ExtractedIntelligenceType.ATLAS,
+            value=atlas.get("name") or atlas_id,
+            mitre_id=atlas.get("mitre_id"),
+            confidence=atlas.get("confidence", 70),
+            meta={"framework": "ATLAS", "source": method}
+        )
+        db.add(intel)
+
+    for ioa in extracted.get("ioas", []):
+        ioa_value = ioa.get("value")
+        if not ioa_value:
+            continue
+        intel = ExtractedIntelligence(
+            article_id=article_id,
+            intelligence_type=ExtractedIntelligenceType.IOA,
+            value=ioa_value,
+            confidence=ioa.get("confidence", 75),
+            evidence=ioa.get("evidence"),
+            meta={"source": method, "category": ioa.get("category")}
+        )
+        db.add(intel)
+
+
+def _generate_article_summaries(
+    article: Article,
+    content: str,
+    extracted: Dict[str, List]
+) -> None:
+    """Generate executive and technical summaries via GenAI."""
+    try:
+        model_manager = get_model_manager()
+        content_for_summary = f"{article.title}\n\n{content[:4000]}"
+
+        ioc_count = len(extracted.get("iocs", []))
+        ttp_list = [ttp.get("mitre_id") or ttp.get("name") for ttp in extracted.get("ttps", [])[:5]]
+
+        exec_result = await_or_run(
+            model_manager.generate_with_fallback(
+                system_prompt="""You are a threat intelligence analyst. Write a 2-3 sentence executive summary for C-level executives. Focus on business impact and key threats. Be concise.""",
+                user_prompt=f"Summarize this threat intelligence article:\n\n{content_for_summary[:2000]}"
+            )
+        )
+        tech_result = await_or_run(
+            model_manager.generate_with_fallback(
+                system_prompt="""You are a senior SOC analyst. Write a technical summary with key IOCs, TTPs, and detection opportunities. Be specific and actionable.""",
+                user_prompt=f"Write a technical summary for SOC analysts:\n\nIOCs found: {ioc_count}\nTTPs: {ttp_list}\n\nArticle:\n{content_for_summary[:2500]}"
+            )
+        )
+
+        article.executive_summary = exec_result.get("response", "")[:1000]
+        article.technical_summary = tech_result.get("response", "")[:2000]
+        article.genai_analysis_remarks = (
+            f"Auto-summarized at ingestion using {exec_result.get('model_used', 'unknown')}"
+        )
+
+        logger.info(
+            "auto_summarization_complete",
+            article_id=article.id,
+            model=exec_result.get("model_used")
+        )
+
+    except Exception as summary_err:
+        logger.warning("auto_summarization_failed", article_id=article.id, error=str(summary_err))
+
+
+def _auto_analyze_article(
+    db: Session,
+    article: Article,
+    content: str,
+    source_url: str
+) -> Tuple[Dict[str, List], str]:
+    """Run GenAI extraction and summarization for an article."""
+    try:
+        extracted = await_or_run(
+            IntelligenceExtractor.extract_with_genai(content, source_url=source_url, db_session=db)
+        )
+        method = "genai"
+    except Exception as genai_err:
+        logger.warning("genai_extraction_fallback", article_id=article.id, error=str(genai_err))
+        extracted = IntelligenceExtractor.extract_all(content, source_url=source_url)
+        method = "regex"
+
+    _persist_extracted_intelligence(db, article.id, extracted, method)
+    _generate_article_summaries(article, content, extracted)
+    return extracted, method
+
+
 router = APIRouter(prefix="/sources", tags=["sources"])
 
 
@@ -131,6 +286,29 @@ class IngestionResult(BaseModel):
     high_priority: int
     status: str
     error: Optional[str] = None
+
+
+class CustomFeedIngestRequest(BaseModel):
+    url: HttpUrl
+    title: Optional[str] = None
+    feed_name: Optional[str] = None
+    description: Optional[str] = None
+    high_priority: bool = False
+
+
+class CustomFeedIngestResponse(BaseModel):
+    article_id: Optional[int]
+    article_title: Optional[str]
+    source_id: Optional[int]
+    source_name: Optional[str]
+    executive_summary: Optional[str]
+    technical_summary: Optional[str]
+    ioc_count: int = 0
+    ttp_count: int = 0
+    status: str
+    message: Optional[str] = None
+    extraction_method: Optional[str] = None
+    created_source: bool = False
 
 
 def get_source_with_stats(db: Session, source: FeedSource) -> FeedSourceResponse:
@@ -262,131 +440,32 @@ def ingest_feed_sync(db: Session, source: FeedSource) -> IngestionResult:
             db.add(article)
             db.flush()  # Get article ID for extraction
             
-            # Auto-extract IOCs, TTPs, IOAs at ingestion time using GenAI (Ollama)
+            extraction_text = f"{entry['title']}
+
+{entry.get('summary', '')}
+
+{entry.get('raw_content', '')}"
+            source_url = entry.get("url") or source.url
+
             try:
-                extraction_text = f"{entry['title']}\n\n{entry.get('summary', '')}\n\n{entry.get('raw_content', '')}"
-                source_url = entry.get("url") or source.url
-                
-                # Use GenAI extraction (Ollama) for intelligent extraction
-                # Falls back to regex if GenAI fails
-                try:
-                    extracted = asyncio.get_event_loop().run_until_complete(
-                        IntelligenceExtractor.extract_with_genai(extraction_text, source_url=source_url)
-                    )
-                    extraction_method = "genai"
-                except RuntimeError:
-                    # If no event loop, create one
-                    extracted = asyncio.run(
-                        IntelligenceExtractor.extract_with_genai(extraction_text, source_url=source_url)
-                    )
-                    extraction_method = "genai"
-                except Exception as genai_err:
-                    logger.warning("genai_extraction_fallback", article_id=article.id, error=str(genai_err))
-                    extracted = IntelligenceExtractor.extract_all(extraction_text, source_url=source_url)
-                    extraction_method = "regex"
-                
-                # Save extracted IOCs (skip entries with no value)
-                for ioc in extracted.get("iocs", []):
-                    ioc_value = ioc.get("value")
-                    if not ioc_value:  # Skip if value is None or empty
-                        continue
-                    intel = ExtractedIntelligence(
-                        article_id=article.id,
-                        intelligence_type=ExtractedIntelligenceType.IOC,
-                        value=ioc_value,
-                        confidence=ioc.get("confidence", 85),
-                        evidence=ioc.get("evidence"),
-                        meta={"type": ioc.get("type"), "source": extraction_method}
-                    )
-                    db.add(intel)
-                
-                # Save extracted TTPs (skip entries with no name/value)
-                for ttp in extracted.get("ttps", []):
-                    ttp_value = ttp.get("name") or ttp.get("value") or ttp.get("mitre_id")
-                    if not ttp_value:  # Skip if no identifiable value
-                        continue
-                    intel = ExtractedIntelligence(
-                        article_id=article.id,
-                        intelligence_type=ExtractedIntelligenceType.TTP,
-                        value=ttp_value,
-                        mitre_id=ttp.get("mitre_id"),
-                        confidence=ttp.get("confidence", 85),
-                        evidence=ttp.get("evidence"),
-                        meta={"source": extraction_method}
-                    )
-                    db.add(intel)
-                
-                # Save extracted IOAs (skip entries with no value)
-                for ioa in extracted.get("ioas", []):
-                    ioa_value = ioa.get("value")
-                    if not ioa_value:  # Skip if value is None or empty
-                        continue
-                    intel = ExtractedIntelligence(
-                        article_id=article.id,
-                        intelligence_type=ExtractedIntelligenceType.IOA,
-                        value=ioa_value,
-                        confidence=ioa.get("confidence", 80),
-                        evidence=str(ioa.get("evidence", "")),
-                        meta={"category": ioa.get("category"), "type": ioa.get("type"), "source": extraction_method}
-                    )
-                    db.add(intel)
-                
-                # Save ATLAS techniques (skip entries with no name/value)
-                for atlas in extracted.get("atlas", []):
-                    atlas_value = atlas.get("name") or atlas.get("value") or atlas.get("mitre_id")
-                    if not atlas_value:  # Skip if no identifiable value
-                        continue
-                    intel = ExtractedIntelligence(
-                        article_id=article.id,
-                        intelligence_type=ExtractedIntelligenceType.ATLAS,
-                        value=atlas_value,
-                        mitre_id=atlas.get("mitre_id"),
-                        confidence=atlas.get("confidence", 70),
-                        meta={"framework": "ATLAS", "source": extraction_method}
-                    )
-                    db.add(intel)
-                    
-                logger.info("auto_extraction_complete", 
-                           article_id=article.id,
-                           method=extraction_method,
-                           iocs=len(extracted.get("iocs", [])),
-                           ttps=len(extracted.get("ttps", [])),
-                           ioas=len(extracted.get("ioas", [])),
-                           atlas=len(extracted.get("atlas", [])))
-                
-                # Auto-summarize using GenAI
-                try:
-                    from app.genai.provider import get_model_manager
-                    
-                    model_manager = get_model_manager()
-                    content_for_summary = f"{entry['title']}\n\n{entry.get('summary', '')}\n\n{entry.get('raw_content', '')[:4000]}"
-                    
-                    # Generate executive summary
-                    exec_result = await_or_run(
-                        model_manager.generate_with_fallback(
-                            system_prompt="""You are a threat intelligence analyst. Write a 2-3 sentence executive summary for C-level executives. Focus on business impact and key threats. Be concise.""",
-                            user_prompt=f"Summarize this threat intelligence article:\n\n{content_for_summary[:2000]}"
-                        )
-                    )
-                    article.executive_summary = exec_result.get("response", "")[:1000]
-                    
-                    # Generate technical summary
-                    tech_result = await_or_run(
-                        model_manager.generate_with_fallback(
-                            system_prompt="""You are a senior SOC analyst. Write a technical summary with key IOCs, TTPs, and detection opportunities. Be specific and actionable.""",
-                            user_prompt=f"Write a technical summary for SOC analysts:\n\nIOCs found: {len(extracted.get('iocs', []))}\nTTPs: {[t.get('mitre_id') for t in extracted.get('ttps', [])[:5]]}\n\nArticle:\n{content_for_summary[:2500]}"
-                        )
-                    )
-                    article.technical_summary = tech_result.get("response", "")[:2000]
-                    article.genai_analysis_remarks = f"Auto-summarized at ingestion using {exec_result.get('model_used', 'unknown')}"
-                    
-                    logger.info("auto_summarization_complete", article_id=article.id, model=exec_result.get("model_used"))
-                except Exception as sum_err:
-                    logger.warning("auto_summarization_failed", article_id=article.id, error=str(sum_err))
-                    
-            except Exception as ex:
-                logger.warning("auto_extraction_failed", article_id=article.id, error=str(ex))
-            
+                extracted, extraction_method = _auto_analyze_article(
+                    db=db,
+                    article=article,
+                    content=extraction_text,
+                    source_url=source_url
+                )
+                logger.info(
+                    "auto_analysis_complete",
+                    article_id=article.id,
+                    method=extraction_method,
+                    iocs=len(extracted.get("iocs", [])),
+                    ttps=len(extracted.get("ttps", [])),
+                    ioas=len(extracted.get("ioas", [])),
+                    atlas=len(extracted.get("atlas", []))
+                )
+            except Exception as analysis_err:
+                logger.warning("auto_analysis_failed", article_id=article.id, error=str(analysis_err))
+
             article_count += 1
         
         # Update source
@@ -600,6 +679,168 @@ def trigger_all_ingestion(
         "total_high_priority": total_high_priority,
         "results": [r.model_dump() for r in results]
     }
+
+
+@router.post("/custom/ingest", response_model=CustomFeedIngestResponse, summary="Ingest a custom document or webpage")
+def ingest_custom_feed(
+    payload: CustomFeedIngestRequest,
+    current_user: User = Depends(require_permission(Permission.MANAGE_SOURCES.value)),
+    db: Session = Depends(get_db)
+):
+    """Ingest a standalone document (PDF/Word/HTML) and auto-run GenAI analysis."""
+    policy = ssrf_policy_from_settings(enforce_allowlist=None)
+    try:
+        fetch_result = safe_fetch_text_sync(
+            payload.url,
+            policy=policy,
+            headers={"User-Agent": "Parshu Custom Feed/1.0"},
+            timeout_seconds=30.0,
+            max_bytes=10_000_000
+        )
+    except FetchError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to fetch URL: {str(e)}"
+        )
+
+    content_type = (fetch_result.headers.get("content-type") or "").split(";")[0].lower()
+    parsed_url = urlparse(payload.url)
+    path_suffix = Path(parsed_url.path).suffix.lower()
+    document_exts = {".pdf", ".doc", ".docx"}
+    is_document = (
+        any(token in content_type for token in ("pdf", "word", "officedocument"))
+        or path_suffix in document_exts
+    )
+
+    extracted_text = ""
+    if is_document:
+        file_ext = path_suffix if path_suffix else ".bin"
+        temp_path = CUSTOM_FEED_DIR / f"{uuid4().hex}{file_ext}"
+        temp_path.write_bytes(fetch_result.content)
+        try:
+            extracted_text = await_or_run(
+                DocumentProcessor.extract("file", str(temp_path), mime_type=content_type or None)
+            )
+        finally:
+            try:
+                temp_path.unlink()
+            except Exception:
+                pass
+    elif "text/html" in content_type or path_suffix in {".html", ".htm"}:
+        extracted_text = await_or_run(DocumentProcessor.extract("url", payload.url))
+    else:
+        extracted_text = fetch_result.text
+
+    normalized_content = FeedParser.normalize_content(extracted_text or "")
+    summary_text = (extracted_text or "")[:500] or None
+    content_hash = hashlib.sha256((extracted_text or "").encode("utf-8")).hexdigest()
+
+    title = payload.title or _extract_title_from_html(fetch_result.text) or parsed_url.hostname or "Custom Document"
+
+    source_name = payload.feed_name or f"custom:{parsed_url.hostname or 'custom'}"
+    source = db.query(FeedSource).filter(FeedSource.name == source_name).first()
+    created_source = False
+    if not source:
+        source = FeedSource(
+            name=source_name,
+            description=payload.description,
+            url=payload.url,
+            feed_type="custom",
+            is_active=True
+        )
+        db.add(source)
+        db.commit()
+        db.refresh(source)
+        created_source = True
+    else:
+        if payload.description:
+            source.description = payload.description
+        source.updated_at = datetime.utcnow()
+
+    duplicate = db.query(Article).filter(
+        or_(
+            Article.content_hash == content_hash,
+            Article.url == payload.url
+        )
+    ).first()
+
+    source.last_fetched = datetime.utcnow()
+    source.fetch_error = None
+    db.commit()
+
+    if duplicate:
+        ioc_count = db.query(ExtractedIntelligence).filter(
+            ExtractedIntelligence.article_id == duplicate.id,
+            ExtractedIntelligence.intelligence_type == ExtractedIntelligenceType.IOC
+        ).count()
+        ttp_count = db.query(ExtractedIntelligence).filter(
+            ExtractedIntelligence.article_id == duplicate.id,
+            ExtractedIntelligence.intelligence_type == ExtractedIntelligenceType.TTP
+        ).count()
+        return CustomFeedIngestResponse(
+            article_id=duplicate.id,
+            article_title=duplicate.title,
+            source_id=source.id,
+            source_name=source.name,
+            executive_summary=duplicate.executive_summary,
+            technical_summary=duplicate.technical_summary,
+            ioc_count=ioc_count,
+            ttp_count=ttp_count,
+            status="duplicate",
+            message="This document was already ingested",
+            created_source=created_source
+        )
+
+    article = Article(
+        source_id=source.id,
+        external_id=payload.url,
+        title=title,
+        raw_content=extracted_text,
+        normalized_content=normalized_content,
+        summary=summary_text,
+        url=payload.url,
+        published_at=None,
+        status=ArticleStatus.NEW,
+        is_high_priority=payload.high_priority,
+        content_hash=content_hash
+    )
+    db.add(article)
+    db.flush()
+
+    extracted_result, extraction_method = _auto_analyze_article(
+        db=db,
+        article=article,
+        content=extracted_text,
+        source_url=payload.url
+    )
+
+    source.last_fetched = datetime.utcnow()
+    source.fetch_error = None
+    db.commit()
+    db.refresh(article)
+
+    logger.info(
+        "custom_feed_ingested",
+        source_id=source.id,
+        article_id=article.id,
+        url=payload.url,
+        user_id=current_user.id
+    )
+
+    return CustomFeedIngestResponse(
+        article_id=article.id,
+        article_title=article.title,
+        source_id=source.id,
+        source_name=source.name,
+        executive_summary=article.executive_summary,
+        technical_summary=article.technical_summary,
+        ioc_count=len(extracted_result.get("iocs", [])),
+        ttp_count=len(extracted_result.get("ttps", [])),
+        status="success",
+        message="Custom document ingested",
+        extraction_method=extraction_method,
+        created_source=created_source
+    )
 
 
 @router.get("/stats/summary")

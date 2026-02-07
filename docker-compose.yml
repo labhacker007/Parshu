@@ -1,27 +1,25 @@
 version: '3.8'
 
+# Production-oriented compose (no dev defaults, no source bind mounts).
+# For local development use `docker-compose.dev.yml`.
+
 services:
   postgres:
     image: postgres:15-alpine
     environment:
-      # Development defaults - override in production via .env
-      POSTGRES_USER: ${POSTGRES_USER:-app_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_pass}
-      POSTGRES_DB: ${POSTGRES_DB:-app_db}
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app_user"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -35,41 +33,25 @@ services:
       context: .
       dockerfile: infra/Dockerfile.backend
     environment:
-      # Development defaults - override in production via .env
-      DATABASE_URL: postgresql://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-app_pass}@postgres:5432/${POSTGRES_DB:-app_db}
-      REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production-minimum-32-chars}
-      DEBUG: "${DEBUG:-true}"
-      CORS_ORIGINS: http://localhost:3000,http://localhost:8000
-      # GenAI - Use Ollama (local) by default for all GenAI features
-      GENAI_PROVIDER: ollama
-      # Ollama v0.14.2 running on host machine - use host.docker.internal from container
-      OLLAMA_BASE_URL: http://host.docker.internal:11434
-      OLLAMA_MODEL: llama3:latest
-      # Ollama is used for: Hunt query generation, IOC extraction, Report summarization
-      # Enable automation scheduler
-      ENABLE_AUTOMATION_SCHEDULER: "true"
-      # Admin user setup - REQUIRED for first-time setup
-      # Set these in .env file or environment before running docker-compose
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@localhost}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: "false"
+      ENV: ${ENV:-prod}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      GENAI_PROVIDER: ${GENAI_PROVIDER:-ollama}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-}
+      ENABLE_AUTOMATION_SCHEDULER: ${ENABLE_AUTOMATION_SCHEDULER:-true}
     ports:
       - "8000:8000"
-    # Live reload enabled - changes to backend files reflect immediately
-    volumes:
-      - ./backend/app:/app/app
-      - ./backend/migrations:/app/migrations
-    # Allow container to access host services (Ollama)
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -78,26 +60,14 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: ../infra/Dockerfile.frontend.dev
+      dockerfile: ../infra/Dockerfile.frontend
     ports:
       - "3000:3000"
-    # Live reload enabled - changes to frontend files reflect immediately
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
     depends_on:
       backend:
         condition: service_healthy
     environment:
-      REACT_APP_API_URL: http://localhost:8000
-      WATCHPACK_POLLING: "true"
-      CHOKIDAR_USEPOLLING: "true"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
 
 volumes:
   postgres_data:

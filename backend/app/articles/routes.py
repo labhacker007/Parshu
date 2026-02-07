@@ -2482,7 +2482,7 @@ async def fetch_article_image(
         logger.error("article_image_fetch_failed", article_id=article_id, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch image: {str(e)}"
+            detail="Failed to fetch image"
         )
 
 

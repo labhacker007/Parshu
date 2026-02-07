@@ -12,6 +12,7 @@ from pydantic import BaseModel, HttpUrl, Field
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.logging import logger
 from app.auth.dependencies import get_current_user
 from app.models import User, UserFeed
 
@@ -94,25 +95,23 @@ async def validate_feed_url(
     Validate if a URL is a valid RSS/Atom/JSON feed.
     Returns detected feed type and error details if invalid.
     """
-    import httpx
     import feedparser
     
     try:
-        # Fetch the URL
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-            response = await client.get(url, headers={
-                'User-Agent': 'Parshu Feed Reader/1.0'
-            })
-        
-        if response.status_code != 200:
-            return {
-                "valid": False,
-                "error": f"URL returned status {response.status_code}",
-                "suggestion": "Check if the URL is accessible and correct"
-            }
-        
-        content = response.text
-        content_type = response.headers.get('content-type', '').lower()
+        from app.core.fetch import safe_fetch_text_async, FetchError
+        from app.core.ssrf import ssrf_policy_from_settings
+
+        policy = ssrf_policy_from_settings(enforce_allowlist=None)
+        result = await safe_fetch_text_async(
+            url,
+            policy=policy,
+            headers={'User-Agent': 'Parshu Feed Reader/1.0'},
+            timeout_seconds=15.0,
+            max_bytes=2_000_000,
+        )
+
+        content = result.text
+        content_type = result.headers.get('content-type', '').lower()
         
         # Check for JSON feed
         if 'application/json' in content_type or 'application/feed+json' in content_type:
@@ -164,23 +163,17 @@ async def validate_feed_url(
             "version": parsed.version
         }
         
-    except httpx.TimeoutException:
+    except FetchError:
         return {
             "valid": False,
-            "error": "Request timed out",
-            "suggestion": "The URL may be slow or unreachable. Try again later."
-        }
-    except httpx.RequestError as e:
-        return {
-            "valid": False,
-            "error": f"Could not connect: {str(e)}",
-            "suggestion": "Check if the URL is correct and accessible"
+            "error": "Unable to fetch URL",
+            "suggestion": "Check if the URL is accessible and points to a valid feed."
         }
     except Exception as e:
         return {
             "valid": False,
-            "error": f"Validation failed: {str(e)}",
-            "suggestion": "Make sure the URL is a valid RSS/Atom feed"
+            "error": "Validation failed",
+            "suggestion": "Make sure the URL is a valid RSS/Atom/JSON feed."
         }
 
 
@@ -456,15 +449,16 @@ async def ingest_user_feed(
         }
         
     except Exception as e:
-        import traceback
         error_detail = str(e)
-        feed.fetch_error = error_detail
+        feed.fetch_error = error_detail[:500]
         feed.last_fetched = datetime.utcnow()
         db.commit()
         
+        # Log full detail server-side; return generic error to client
+        logger.warning("user_feed_ingest_failed", user_id=current_user.id, feed_id=feed_id, error=error_detail)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to ingest feed: {error_detail}"
+            detail="Failed to ingest feed"
         )
 
 

@@ -1,9 +1,4 @@
-apiVersion: namespace
-kind: Namespace
-metadata:
-  name: orion
----
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: orion
+  name: parshu

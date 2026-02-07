@@ -1,5 +1,5 @@
 """Main FastAPI application."""
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.config import settings
@@ -65,52 +65,56 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     logger.info("app_startup", version=settings.APP_VERSION)
     
-    # Run schema migrations first (add missing columns)
-    try:
-        run_schema_migrations()
-        logger.info("schema_migrations_complete")
-    except Exception as e:
-        logger.error("schema_migrations_failed", error=str(e))
+    # Development-only schema adjustments (use Alembic for controlled production migrations)
+    if settings.DEBUG and settings.ENV != "prod":
+        try:
+            run_schema_migrations()
+            logger.info("schema_migrations_complete")
+        except Exception as e:
+            logger.error("schema_migrations_failed", error=str(e))
     
-    # Auto-seed database if empty (for local development)
-    try:
-        from app.core.database import SessionLocal
-        from app.models import User
-        db = SessionLocal()
-        user_count = db.query(User).count()
-        db.close()
-        if user_count == 0:
-            logger.info("database_empty_seeding")
-            import os
-            # Change to project root to find config/seed-sources.json
-            original_cwd = os.getcwd()
-            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            os.chdir(project_root)
-            try:
-                from app.seeds import seed_database
-                seed_database()
-                logger.info("database_seeded_successfully")
-            finally:
-                os.chdir(original_cwd)
-    except Exception as e:
-        logger.error("auto_seed_failed", error=str(e))
+    # Auto-seed database if empty (development only)
+    if settings.DEBUG and settings.ENV != "prod":
+        try:
+            from app.core.database import SessionLocal
+            from app.models import User
+            db = SessionLocal()
+            user_count = db.query(User).count()
+            db.close()
+            if user_count == 0:
+                logger.info("database_empty_seeding")
+                import os
+                # Change to project root to find config/seed-sources.json
+                original_cwd = os.getcwd()
+                project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                os.chdir(project_root)
+                try:
+                    from app.seeds import seed_database
+                    seed_database()
+                    logger.info("database_seeded_successfully")
+                finally:
+                    os.chdir(original_cwd)
+        except Exception as e:
+            logger.error("auto_seed_failed", error=str(e))
     
-    # Initialize scheduler for automated hunts
+    # Initialize scheduler for automated hunts (opt-in)
     from app.automation.scheduler import init_scheduler, shutdown_scheduler
-    try:
-        init_scheduler()
-        logger.info("scheduler_started")
-    except Exception as e:
-        logger.error("scheduler_start_failed", error=str(e))
+    if settings.ENABLE_AUTOMATION_SCHEDULER:
+        try:
+            init_scheduler()
+            logger.info("scheduler_started")
+        except Exception as e:
+            logger.error("scheduler_start_failed", error=str(e))
     
     yield
     
     # Shutdown scheduler
-    try:
-        shutdown_scheduler()
-        logger.info("scheduler_stopped")
-    except Exception as e:
-        logger.error("scheduler_stop_failed", error=str(e))
+    if settings.ENABLE_AUTOMATION_SCHEDULER:
+        try:
+            shutdown_scheduler()
+            logger.info("scheduler_stopped")
+        except Exception as e:
+            logger.error("scheduler_stop_failed", error=str(e))
     
     logger.info("app_shutdown")
 
@@ -143,15 +147,25 @@ async def add_security_headers(request, call_next):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     
     # Content Security Policy
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-        "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data: https:; "
-        "font-src 'self' data:; "
-        "connect-src 'self'; "
-        "frame-ancestors 'none';"
-    )
+    if request.url.path in ("/docs", "/redoc", "/openapi.json"):
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https:; "
+            "font-src 'self' data:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none';"
+        )
+    else:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'none'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'none'; "
+            "form-action 'none'; "
+            "img-src 'self' data:; "
+            "connect-src 'self';"
+        )
     
     # Referrer Policy
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -265,10 +279,11 @@ def health_check():
         source_count = db.query(FeedSource).count()
         article_count = db.query(Article).count()
     except Exception as e:
+        logger.error("health_check_failed", error=str(e))
         return {
             "status": "unhealthy",
             "version": settings.APP_VERSION,
-            "error": str(e)
+            "error": "unhealthy"
         }
     finally:
         db.close()
@@ -302,12 +317,25 @@ def root():
     }
 
 
+def _require_setup_access(request: Request) -> None:
+    # Never expose bootstrap/setup endpoints in production-like environments.
+    if settings.ENV == "prod" or not settings.DEBUG:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    # Optional bootstrap token for shared dev environments.
+    if settings.SETUP_TOKEN:
+        provided = request.headers.get("X-Setup-Token")
+        if not provided or provided != settings.SETUP_TOKEN:
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+
 @app.post("/setup/seed")
-def seed_database_setup():
+def seed_database_setup(request: Request):
     """Seed the database with initial data. Only works if no users exist.
     
     SECURITY: Admin credentials are set via environment variables, not returned in response.
     """
+    _require_setup_access(request)
     from app.core.database import SessionLocal
     from app.models import User
     
@@ -341,13 +369,14 @@ def seed_database_setup():
         logger.error("database_seed_failed", error=str(e))
         return {
             "success": False,
-            "message": f"Seeding failed: {str(e)}"
+            "message": "Seeding failed"
         }
 
 
 @app.post("/setup/fix-schema")
-def fix_schema_setup():
+def fix_schema_setup(request: Request):
     """Manually run schema migrations to fix missing columns."""
+    _require_setup_access(request)
     try:
         run_schema_migrations()
         return {
@@ -355,15 +384,17 @@ def fix_schema_setup():
             "message": "Schema migrations completed. Missing columns added to feed_sources table."
         }
     except Exception as e:
+        logger.error("schema_migration_failed", error=str(e))
         return {
             "success": False,
-            "message": f"Schema migration failed: {str(e)}"
+            "message": "Schema migration failed"
         }
 
 
 @app.post("/setup/ingest")
-def ingest_feeds_setup():
+def ingest_feeds_setup(request: Request):
     """Ingest articles from all active feed sources. Call this after seeding."""
+    _require_setup_access(request)
     from app.core.database import SessionLocal
     from app.models import FeedSource, Article
     from app.ingestion.parser import FeedParser
@@ -422,10 +453,11 @@ def ingest_feeds_setup():
                 })
                 
             except Exception as e:
+                logger.warning("setup_ingest_source_failed", source=source.name, error=str(e))
                 results.append({
                     "source": source.name,
                     "status": "error",
-                    "error": str(e)
+                    "error": "failed"
                 })
         
         return {
@@ -436,9 +468,10 @@ def ingest_feeds_setup():
         }
         
     except Exception as e:
+        logger.error("setup_ingest_failed", error=str(e))
         return {
             "success": False,
-            "message": f"Ingestion failed: {str(e)}"
+            "message": "Ingestion failed"
         }
     finally:
         db.close()

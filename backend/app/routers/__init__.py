@@ -5,7 +5,14 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
 from app.auth.schemas import LoginRequest, LoginResponse, TokenRefreshRequest, TokenRefreshResponse, UserResponse, UserCreate
-from app.auth.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
+from app.auth.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    DUMMY_PASSWORD_HASH,
+)
 from app.auth.dependencies import get_current_user
 from app.models import User
 from app.audit.manager import AuditManager
@@ -17,6 +24,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", response_model=UserResponse)
 def register(user_create: UserCreate, db: Session = Depends(get_db)):
     """Register a new user (local auth only)."""
+    # Basic password policy (avoid weak credentials by default)
+    if not user_create.password or len(user_create.password) < 12:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 12 characters long"
+        )
+
     # Check if user already exists
     existing = db.query(User).filter(
         (User.email == user_create.email) | (User.username == user_create.username)
@@ -55,7 +69,6 @@ def login(login_request: LoginRequest, db: Session = Depends(get_db)):
     - Rate limiting applied via middleware
     - Generic error messages to prevent user enumeration
     """
-    import time
     import hmac
     
     # Input validation
@@ -71,15 +84,18 @@ def login(login_request: LoginRequest, db: Session = Depends(get_db)):
             detail="Invalid input"
         )
     
-    # Add small delay to prevent timing attacks
-    time.sleep(0.1)
-    
     # Support login by either email or username
     user = db.query(User).filter(
         (User.email == login_request.email) | (User.username == login_request.email)
     ).first()
     
-    # Use constant-time comparison for credentials
+    # Use a dummy verify to reduce timing side-channels between "user not found" and "bad password"
+    try:
+        verify_password(login_request.password, DUMMY_PASSWORD_HASH)
+    except Exception:
+        pass
+
+    # Verify credentials
     credentials_valid = False
     if user and user.hashed_password:
         credentials_valid = verify_password(login_request.password, user.hashed_password)

@@ -14,6 +14,10 @@ pwd_context = CryptContext(
     pbkdf2_sha256__rounds=320000,  # High iteration count for security
 )
 
+# Used to reduce timing side-channels during login (verify even when user doesn't exist).
+# Computed once at import to avoid expensive hashing per request.
+DUMMY_PASSWORD_HASH = pwd_context.hash("dummy-password-not-used")
+
 
 def hash_password(password: str) -> str:
     """Hash a password using PBKDF2-SHA256 to avoid native bcrypt dependencies in some environments."""

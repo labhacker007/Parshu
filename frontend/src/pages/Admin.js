@@ -14,7 +14,8 @@ import {
   EditOutlined, SaveOutlined, InfoCircleOutlined,
   SafetyOutlined, ClusterOutlined, PlusOutlined, DeleteOutlined,
   FileTextOutlined, BugOutlined, AimOutlined, BarChartOutlined, AuditOutlined,
-  HistoryOutlined, BookOutlined, QuestionCircleOutlined, SendOutlined
+  HistoryOutlined, BookOutlined, QuestionCircleOutlined, SendOutlined,
+  BgColorsOutlined
 } from '@ant-design/icons';
 import ConnectorsManager from '../components/ConnectorsManager';
 import ConfigurationManager from '../components/ConfigurationManager';
@@ -27,6 +28,7 @@ import UnifiedUserManagement from '../components/UnifiedUserManagement';
 import SimpleAccessManager from '../components/SimpleAccessManager';
 import ArchitectureDocs from '../components/ArchitectureDocs';
 import SchedulerManager from '../components/SchedulerManager';
+import ThemeManager from '../components/ThemeManager';
 import { useTimezone } from '../context/TimezoneContext';
 import { adminAPI } from '../api/client';
 import './Admin.css';
@@ -2718,6 +2720,11 @@ function Admin() {
       key: 'documentation',
       label: <span><BookOutlined /> Documentation</span>,
       children: <ParshuDocumentation setActiveTab={setActiveTab} availableModels={availableModels} />,
+    },
+    {
+      key: 'appearance',
+      label: <span><BgColorsOutlined /> Appearance</span>,
+      children: <ThemeManager />,
     },
   ];
 

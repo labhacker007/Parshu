@@ -8,6 +8,7 @@ from typing import Dict, Tuple, Optional
 from functools import wraps
 import asyncio
 import threading
+import time
 
 from fastapi import Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -15,6 +16,15 @@ from starlette.responses import JSONResponse
 
 from app.core.logging import logger
 from app.core.config import settings
+from app.core.ssrf import normalize_path_for_rate_limit
+
+try:
+    import redis.asyncio as redis_async  # redis-py >= 4
+except Exception:  # pragma: no cover
+    redis_async = None
+
+_redis_limiter_instance: Optional["RedisRateLimiter"] = None
+_redis_disabled_until: float = 0.0
 
 
 class RateLimiter:
@@ -27,6 +37,7 @@ class RateLimiter:
         # Storage: {key: [(timestamp, count), ...]}
         self._requests: Dict[str, list] = defaultdict(list)
         self._lock = threading.Lock()
+        self._max_keys = 20000  # prevent unbounded growth (best-effort)
         
         # Default limits (requests per window)
         self.default_limit = 100
@@ -58,6 +69,9 @@ class RateLimiter:
             (ts, count) for ts, count in self._requests[key]
             if ts > cutoff
         ]
+        if not self._requests[key]:
+            # keep memory bounded
+            self._requests.pop(key, None)
     
     def _get_request_count(self, key: str, window: int) -> int:
         """Get total requests in the current window."""
@@ -84,6 +98,19 @@ class RateLimiter:
         window = window or self.default_window
         
         with self._lock:
+            # best-effort memory cap
+            if len(self._requests) > self._max_keys:
+                # drop oldest keys by oldest timestamp
+                try:
+                    oldest_keys = sorted(
+                        self._requests.items(),
+                        key=lambda kv: min((ts for ts, _ in kv[1]), default=datetime.utcnow()),
+                    )[:1000]
+                    for k, _ in oldest_keys:
+                        self._requests.pop(k, None)
+                except Exception:
+                    pass
+
             current_count = self._get_request_count(key, window)
             
             if current_count >= limit:
@@ -97,7 +124,7 @@ class RateLimiter:
             remaining = limit - current_count - 1
             
             return True, remaining, window
-    
+
     def get_limit_for_endpoint(self, path: str) -> Tuple[int, int]:
         """Get rate limit for a specific endpoint."""
         # Check for exact match first
@@ -116,16 +143,64 @@ class RateLimiter:
 rate_limiter = RateLimiter()
 
 
+class RedisRateLimiter:
+    """Redis-backed fixed-window limiter (multi-worker safe)."""
+
+    def __init__(self, redis_url: str):
+        if not redis_async:
+            raise RuntimeError("redis asyncio client not available")
+        self._redis = redis_async.from_url(redis_url, encoding="utf-8", decode_responses=True)
+
+    async def check(self, key: str, limit: int, window: int) -> Tuple[bool, int, int]:
+        now = int(time.time())
+        bucket = now // window
+        redis_key = f"rl:{key}:{bucket}"
+        reset = window - (now % window)
+
+        pipe = self._redis.pipeline()
+        pipe.incr(redis_key, 1)
+        pipe.expire(redis_key, window + 1)
+        count, _ = await pipe.execute()
+        remaining = max(0, limit - int(count))
+        allowed = int(count) <= limit
+        return allowed, remaining, reset
+
+
+def _get_trusted_proxy_hosts() -> set[str]:
+    return {h.strip() for h in (settings.TRUSTED_PROXY_HOSTS or "").split(",") if h.strip()}
+
+
+def get_client_ip(request: Request) -> str:
+    client_ip = request.client.host if request.client else "unknown"
+    if not settings.TRUST_PROXY_HEADERS:
+        return client_ip
+
+    if client_ip not in _get_trusted_proxy_hosts():
+        return client_ip
+
+    xff = request.headers.get("X-Forwarded-For", "")
+    if xff:
+        # left-most is original client in standard deployments
+        return xff.split(",")[0].strip()
+    xri = request.headers.get("X-Real-IP", "")
+    if xri:
+        return xri.strip()
+    return client_ip
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """FastAPI middleware for rate limiting."""
     
     async def dispatch(self, request: Request, call_next):
+        if getattr(settings, "ENV", "").strip().lower() == "test":
+            return await call_next(request)
+
         # Skip rate limiting for health checks
         if request.url.path in ["/health", "/", "/docs", "/openapi.json"]:
             return await call_next(request)
         
         # Get client identifier
-        client_ip = request.client.host if request.client else "unknown"
+        client_ip = get_client_ip(request)
         
         # Get user ID from token if authenticated
         user_id = None
@@ -140,19 +215,36 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 pass
         
         # Build rate limit key
-        path = request.url.path
-        key = f"{path}:{user_id or client_ip}"
+        path = normalize_path_for_rate_limit(request.url.path)
+        identity = str(user_id or client_ip)
+        key = f"{path}:{identity}"
         
         # Get limits for this endpoint
-        limit, window = rate_limiter.get_limit_for_endpoint(path)
+        limit, window = rate_limiter.get_limit_for_endpoint(request.url.path)
         
         # Check rate limit
-        allowed, remaining, reset_time = rate_limiter.check_rate_limit(key, limit, window)
+        allowed = True
+        remaining = 0
+        reset_time = window
+        if redis_async and settings.REDIS_URL:
+            try:
+                global _redis_limiter_instance
+                global _redis_disabled_until
+                if time.time() < _redis_disabled_until:
+                    raise RuntimeError("redis_rate_limiter_temporarily_disabled")
+                if _redis_limiter_instance is None:
+                    _redis_limiter_instance = RedisRateLimiter(settings.REDIS_URL)
+                allowed, remaining, reset_time = await _redis_limiter_instance.check(key, limit, window)
+            except Exception:
+                _redis_disabled_until = time.time() + 30.0
+                allowed, remaining, reset_time = rate_limiter.check_rate_limit(key, limit, window)
+        else:
+            allowed, remaining, reset_time = rate_limiter.check_rate_limit(key, limit, window)
         
         if not allowed:
             logger.warning(
                 "rate_limit_exceeded",
-                path=path,
+                path=request.url.path,
                 client_ip=client_ip,
                 user_id=user_id,
                 reset_time=reset_time

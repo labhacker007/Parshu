@@ -25,6 +25,10 @@ async def get_provider_status(
     """
     from app.core.config import settings
     import httpx
+    from app.auth.unified_permissions import has_api_permission
+
+    role_name = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
+    is_admin = has_api_permission(role_name, "manage:genai")
     
     providers = {
         "ollama": {
@@ -85,7 +89,8 @@ async def get_provider_status(
                 providers["ollama"]["status"] = "error"
     except Exception as e:
         providers["ollama"]["status"] = "disconnected"
-        providers["ollama"]["error"] = str(e)
+        if is_admin:
+            providers["ollama"]["error"] = str(e)
     
     # Get configured models from registry (handle case where table doesn't exist)
     from app.genai.models import GenAIModelRegistry
@@ -159,12 +164,28 @@ async def get_provider_status(
             if model["is_usable"]:
                 unique_usable.append(model)
     
+    recommendations = get_setup_recommendations(providers)
+
+    # Redact sensitive/provider-internal details for non-admin users
+    if not is_admin:
+        redacted = {}
+        for key, info in providers.items():
+            redacted[key] = {
+                "name": info.get("name"),
+                "configured": info.get("configured"),
+                "is_local": info.get("is_local"),
+                "is_free": info.get("is_free"),
+                "status": info.get("status"),
+                "available_models": info.get("available_models", []),
+            }
+        providers = redacted
+
     return {
         "providers": providers,
         "usable_models": unique_usable,
         "all_models": unique_all,
         "default_provider": settings.GENAI_PROVIDER,
-        "recommendations": get_setup_recommendations(providers),
+        "recommendations": recommendations,
         "total_before_dedup": len(usable_models),
         "total_after_dedup": len(unique_all)
     }
@@ -423,14 +444,13 @@ async def get_help(
     Falls back to built-in documentation if GenAI is unavailable.
     """
     try:
-        # Try to use GenAI for a more dynamic response
         from app.genai.provider import get_genai_provider
-        
+        config_manager = GenAIConfigManager(db)
+        use_case = "help"
+
         provider = get_genai_provider()
-        
-        # Build context from built-in docs
+
         relevant_doc = find_best_help_match(request.question)
-        
         prompt = f"""You are Parshu's AI assistant. Help the user with their question about the platform.
 
 Reference Documentation:
@@ -441,26 +461,63 @@ User Question: {request.question}
 Provide a helpful, concise answer based on the documentation. If the question isn't covered, 
 suggest where they might find more information or what steps to take.
 """
-        
+
+        role_name = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
+        config = config_manager.get_config(use_case=use_case, user_id=current_user.id, user_role=role_name)
+        model_identifier = request.model or config.get("model_details", {}).get("identifier")
+
+        if not model_identifier:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="No GenAI model configured for help requests"
+            )
+
+        config_manager.validate_model_for_use_case(model_identifier, use_case, role_name)
+        config_manager._check_quota(current_user.id, role_name)
+
+        start_time = datetime.utcnow()
         response = await provider.generate(
             prompt=prompt,
-            model=request.model,
-            max_tokens=500,
-            temperature=0.7
+            model=model_identifier,
+            max_tokens=config.get("max_tokens", 500),
+            temperature=config.get("temperature", 0.3),
+            top_p=config.get("top_p", 0.9)
         )
-        
+        elapsed_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+
+        if isinstance(response, dict):
+            answer = response.get("text", relevant_doc)
+            model_used = response.get("model") or model_identifier
+        else:
+            answer = response or relevant_doc
+            model_used = model_identifier
+
+        tokens_used = max(len(answer.split()), 1)
+        config_manager.log_request(
+            use_case=use_case,
+            model_used=model_identifier,
+            config_id=config.get("config_id"),
+            user_id=current_user.id,
+            prompt=prompt,
+            response=answer,
+            tokens_used=tokens_used,
+            response_time_ms=elapsed_ms,
+            was_successful=True
+        )
+
         return HelpResponse(
-            answer=response.get("text", relevant_doc),
+            answer=answer,
             sources=["Parshu Documentation"],
-            model_used=response.get("model")
+            model_used=model_used
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.warning("genai_help_fallback", error=str(e))
         
-        # Fallback to built-in documentation
         answer = find_best_help_match(request.question)
-        
+
         return HelpResponse(
             answer=answer,
             sources=["Built-in Documentation"],
@@ -718,7 +775,7 @@ class QuotaCreate(BaseModel):
 # MODEL REGISTRY ENDPOINTS
 # ============================================================================
 
-@router.get("/admin/models/available")
+@router.get("/models/available")
 async def get_available_models(
     provider: Optional[str] = None,
     is_free: Optional[bool] = None,
@@ -760,6 +817,26 @@ async def get_available_models(
         ],
         "total": len(models)
     }
+
+
+@router.get("/admin/models/available")
+async def get_available_models_admin(
+    provider: Optional[str] = None,
+    is_free: Optional[bool] = None,
+    is_local: Optional[bool] = None,
+    use_case: Optional[str] = None,
+    current_user: User = Depends(require_permission("manage:genai")),
+    db: Session = Depends(get_db)
+):
+    """Get all available models (enabled only) - Admin alias."""
+    return await get_available_models(
+        provider=provider,
+        is_free=is_free,
+        is_local=is_local,
+        use_case=use_case,
+        current_user=current_user,
+        db=db,
+    )
 
 
 @router.get("/admin/models/all")
@@ -1119,7 +1196,7 @@ async def get_configs(
     config_type: Optional[str] = None,
     use_case: Optional[str] = None,
     is_active: Optional[bool] = None,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission("manage:genai")),
     db: Session = Depends(get_db)
 ):
     """Get all configurations."""

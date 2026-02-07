@@ -79,6 +79,8 @@ venv/
 ENV/
 env/
 .venv
+.venv*/
+backend/.venv*/
 env.bak/
 venv.bak/
 
@@ -431,3 +433,9 @@ config.local.json
 # Temporary analysis files
 *.analysis.json
 *.hunt_cache.json
+
+# Local scratch docs
+COLOR_PALETTE_REFERENCE.md
+COMPONENT_MOCKUPS.md
+UX_REDESIGN_PLAN.md
+PARSHU_DESIGN_RESEARCH_PROPOSAL.md

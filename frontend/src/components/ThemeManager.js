@@ -17,11 +17,12 @@ const { Title, Text, Paragraph } = Typography;
 
 /**
  * Theme Manager - Admin component to switch between application themes
+ * Based on research of CrowdStrike, SentinelOne, Splunk, CyFocus, SOCius
  */
 const ThemeManager = () => {
   const { 
     currentTheme, currentThemeId, setTheme, themes, 
-    hackerMode, cyberMode, toggleHackerMode, toggleCyberMode 
+    terminalMode, neonMode, toggleTerminalMode, toggleNeonMode 
   } = useTheme();
 
   const handleThemeChange = (themeId) => {
@@ -36,7 +37,7 @@ const ThemeManager = () => {
     premium: themes.filter(t => t.category === 'premium'),
   };
 
-  const specialMode = hackerMode ? 'hacker' : cyberMode ? 'cyber' : 'none';
+  const specialMode = terminalMode ? 'terminal' : neonMode ? 'neon' : 'none';
 
   return (
     <div className="theme-manager">
@@ -46,7 +47,7 @@ const ThemeManager = () => {
           Application Themes
         </Title>
         <Paragraph type="secondary">
-          Choose from 6 professionally designed themes with light and dark variants. 
+          Choose from 4 professionally designed themes based on industry-leading cybersecurity platforms. 
           Enable special modes for a unique aesthetic experience.
         </Paragraph>
       </div>
@@ -60,26 +61,26 @@ const ThemeManager = () => {
         
         <Row gutter={16}>
           <Col span={12}>
-            <div className={`mode-option ${hackerMode ? 'active hacker' : ''}`}>
+            <div className={`mode-option ${terminalMode ? 'active terminal' : ''}`}>
               <div className="mode-header">
                 <Space>
-                  <CodeOutlined style={{ fontSize: 20, color: hackerMode ? '#00FF41' : 'var(--text-muted)' }} />
+                  <CodeOutlined style={{ fontSize: 20, color: terminalMode ? '#00FF41' : 'var(--text-muted)' }} />
                   <div>
-                    <Text strong>Hacker Mode</Text>
+                    <Text strong>Terminal Mode</Text>
                     <br />
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                      Terminal aesthetic with green glow
+                      Green terminal aesthetic with monospace fonts
                     </Text>
                   </div>
                 </Space>
                 <Switch 
-                  checked={hackerMode} 
-                  onChange={toggleHackerMode}
-                  style={{ backgroundColor: hackerMode ? '#00FF41' : undefined }}
+                  checked={terminalMode} 
+                  onChange={toggleTerminalMode}
+                  style={{ backgroundColor: terminalMode ? '#00FF41' : undefined }}
                 />
               </div>
-              {hackerMode && (
-                <div className="mode-preview hacker-preview">
+              {terminalMode && (
+                <div className="mode-preview terminal-preview">
                   <Text style={{ fontFamily: 'monospace', color: '#00FF41' }}>
                     &gt; System initialized...
                   </Text>
@@ -89,26 +90,26 @@ const ThemeManager = () => {
           </Col>
           
           <Col span={12}>
-            <div className={`mode-option ${cyberMode ? 'active cyber' : ''}`}>
+            <div className={`mode-option ${neonMode ? 'active neon' : ''}`}>
               <div className="mode-header">
                 <Space>
-                  <ThunderboltOutlined style={{ fontSize: 20, color: cyberMode ? '#00F0FF' : 'var(--text-muted)' }} />
+                  <ThunderboltOutlined style={{ fontSize: 20, color: neonMode ? '#00F0FF' : 'var(--text-muted)' }} />
                   <div>
-                    <Text strong>Cyber Mode</Text>
+                    <Text strong>Neon Mode</Text>
                     <br />
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                      Futuristic neon aesthetic
+                      Futuristic cyan neon aesthetic
                     </Text>
                   </div>
                 </Space>
                 <Switch 
-                  checked={cyberMode} 
-                  onChange={toggleCyberMode}
-                  style={{ backgroundColor: cyberMode ? '#00F0FF' : undefined }}
+                  checked={neonMode} 
+                  onChange={toggleNeonMode}
+                  style={{ backgroundColor: neonMode ? '#00F0FF' : undefined }}
                 />
               </div>
-              {cyberMode && (
-                <div className="mode-preview cyber-preview">
+              {neonMode && (
+                <div className="mode-preview neon-preview">
                   <Text style={{ color: '#00F0FF', textShadow: '0 0 10px #00F0FF' }}>
                     NEURAL LINK ACTIVE
                   </Text>
@@ -118,20 +119,20 @@ const ThemeManager = () => {
           </Col>
         </Row>
 
-        {(hackerMode || cyberMode) && (
+        {(terminalMode || neonMode) && (
           <Alert
-            message={hackerMode ? "Hacker Mode Active" : "Cyber Mode Active"}
-            description={hackerMode 
+            message={terminalMode ? "Terminal Mode Active" : "Neon Mode Active"}
+            description={terminalMode 
               ? "Monospace fonts, green terminal colors, and matrix-style glow effects applied." 
               : "Futuristic fonts, cyan neon colors, and cyberpunk glow effects applied."
             }
             type="info"
             showIcon
-            icon={hackerMode ? <CodeOutlined /> : <ThunderboltOutlined />}
+            icon={terminalMode ? <CodeOutlined /> : <ThunderboltOutlined />}
             style={{ 
               marginTop: 16, 
-              background: hackerMode ? 'rgba(0, 255, 65, 0.1)' : 'rgba(0, 240, 255, 0.1)', 
-              borderColor: hackerMode ? '#00FF41' : '#00F0FF' 
+              background: terminalMode ? 'rgba(0, 255, 65, 0.1)' : 'rgba(0, 240, 255, 0.1)', 
+              borderColor: terminalMode ? '#00FF41' : '#00F0FF' 
             }}
           />
         )}
@@ -149,9 +150,9 @@ const ThemeManager = () => {
           <Col xs={24} sm={12} md={8} key={theme.id}>
             <ThemeCard 
               theme={theme} 
-              isSelected={currentThemeId === theme.id && !hackerMode && !cyberMode}
+              isSelected={currentThemeId === theme.id && !terminalMode && !neonMode}
               onSelect={() => handleThemeChange(theme.id)}
-              disabled={hackerMode || cyberMode}
+              disabled={terminalMode || neonMode}
             />
           </Col>
         ))}
@@ -169,9 +170,9 @@ const ThemeManager = () => {
           <Col xs={24} sm={12} md={8} key={theme.id}>
             <ThemeCard 
               theme={theme} 
-              isSelected={currentThemeId === theme.id && !hackerMode && !cyberMode}
+              isSelected={currentThemeId === theme.id && !terminalMode && !neonMode}
               onSelect={() => handleThemeChange(theme.id)}
-              disabled={hackerMode || cyberMode}
+              disabled={terminalMode || neonMode}
             />
           </Col>
         ))}
@@ -189,9 +190,9 @@ const ThemeManager = () => {
           <Col xs={24} sm={12} md={8} key={theme.id}>
             <ThemeCard 
               theme={theme} 
-              isSelected={currentThemeId === theme.id && !hackerMode && !cyberMode}
+              isSelected={currentThemeId === theme.id && !terminalMode && !neonMode}
               onSelect={() => handleThemeChange(theme.id)}
-              disabled={hackerMode || cyberMode}
+              disabled={terminalMode || neonMode}
             />
           </Col>
         ))}
@@ -224,8 +225,8 @@ const ThemeManager = () => {
                     height: 20, 
                     borderRadius: 4, 
                     background: currentTheme.colors.primary,
-                    border: '2px solid var(--border-color)',
-                    boxShadow: (hackerMode || cyberMode) ? `0 0 8px ${currentTheme.colors.primary}` : 'none'
+                    border: '2px solid var(--border-default)',
+                    boxShadow: (terminalMode || neonMode) ? `0 0 8px ${currentTheme.colors.primary}` : 'none'
                   }} 
                 />
                 <Text code style={{ fontSize: 11 }}>{currentTheme.colors.primary}</Text>
@@ -235,8 +236,8 @@ const ThemeManager = () => {
           <Col span={6}>
             <div className="info-item">
               <Text strong>Special Mode</Text>
-              <Tag color={hackerMode ? 'green' : cyberMode ? 'cyan' : 'default'}>
-                {hackerMode ? 'HACKER' : cyberMode ? 'CYBER' : 'OFF'}
+              <Tag color={terminalMode ? 'green' : neonMode ? 'cyan' : 'default'}>
+                {terminalMode ? 'TERMINAL' : neonMode ? 'NEON' : 'OFF'}
               </Tag>
             </div>
           </Col>
@@ -269,12 +270,12 @@ const ThemeCard = ({ theme, isSelected, onSelect, disabled }) => {
           className="preview-card"
           style={{ 
             background: theme.colors.bgCard,
-            borderColor: theme.colors.border,
+            borderColor: theme.colors.borderDefault,
           }}
         >
           <div 
             className="preview-header"
-            style={{ borderColor: theme.colors.border }}
+            style={{ borderColor: theme.colors.borderDefault }}
           >
             <div 
               className="preview-dot"

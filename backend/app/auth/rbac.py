@@ -24,6 +24,8 @@ class Permission(str, Enum):
     # Reports
     READ_REPORTS = "read:reports"
     CREATE_REPORTS = "create:reports"
+    EDIT_REPORTS = "edit:reports"
+    PUBLISH_REPORTS = "publish:reports"
     SHARE_REPORTS = "share:reports"
     
     # Sources
@@ -83,6 +85,8 @@ ROLE_PERMISSIONS = {
         Permission.EXTRACT_INTELLIGENCE.value,
         Permission.READ_REPORTS.value,
         Permission.CREATE_REPORTS.value,
+        Permission.EDIT_REPORTS.value,
+        Permission.PUBLISH_REPORTS.value,
         Permission.SHARE_REPORTS.value,
         Permission.READ_HUNTS.value,
         Permission.CREATE_HUNTS.value,

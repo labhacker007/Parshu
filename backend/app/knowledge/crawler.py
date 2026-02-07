@@ -15,6 +15,8 @@ import httpx
 from bs4 import BeautifulSoup
 
 from app.core.logging import logger
+from app.core.fetch import safe_fetch_text_async, FetchError
+from app.core.ssrf import ssrf_policy_from_settings
 
 
 class WebCrawler:
@@ -209,32 +211,28 @@ class WebCrawler:
     async def _fetch_page(self, url: str, client: httpx.AsyncClient) -> Optional[Tuple[str, BeautifulSoup]]:
         """Fetch and parse a single page with authentication support."""
         try:
-            # Build request kwargs
-            request_kwargs = {
-                'follow_redirects': True,
-                'headers': self._get_auth_headers()
-            }
-            
-            # Add basic auth if configured
+            policy = ssrf_policy_from_settings()
+
             auth = self._get_auth()
-            if auth:
-                request_kwargs['auth'] = auth
-            
-            # Add session cookies if configured
-            if self.session_cookies:
-                request_kwargs['cookies'] = self.session_cookies
-            
-            response = await client.get(url, **request_kwargs)
-            response.raise_for_status()
-            
-            content_type = response.headers.get('content-type', '')
+            result = await safe_fetch_text_async(
+                url,
+                policy=policy,
+                client=client,
+                headers=self._get_auth_headers(),
+                cookies=self.session_cookies or None,
+                auth=auth,
+                timeout_seconds=float(self.timeout),
+                max_bytes=4_000_000,
+            )
+
+            content_type = result.headers.get('content-type', '')
             if 'text/html' not in content_type:
                 return None
             
-            soup = BeautifulSoup(response.text, 'html.parser')
-            return (response.url, soup)
-            
-        except Exception as e:
+            soup = BeautifulSoup(result.text, 'html.parser')
+            return (result.final_url, soup)
+             
+        except (FetchError, Exception) as e:
             self.errors.append({
                 'url': url,
                 'error': str(e),

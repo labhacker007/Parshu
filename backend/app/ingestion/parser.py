@@ -10,6 +10,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from bleach import clean as sanitize_html
 from app.core.logging import logger
+from app.core.config import settings
 
 
 class FeedParser:
@@ -32,7 +33,22 @@ class FeedParser:
     def parse_feed(url: str, timeout: int = 30) -> Dict:
         """Parse an RSS/Atom feed."""
         try:
-            feed = feedparser.parse(url)
+            from app.core.fetch import safe_fetch_text_sync, FetchError
+            from app.core.ssrf import ssrf_policy_from_settings
+
+            policy = ssrf_policy_from_settings(enforce_allowlist=getattr(settings, "SSRF_ENFORCE_ALLOWLIST", None))
+            result = safe_fetch_text_sync(
+                url,
+                policy=policy,
+                headers={
+                    "User-Agent": "Parshu Feed Reader/1.0",
+                    "Accept": "application/rss+xml,application/atom+xml,application/xml,text/xml,*/*;q=0.8",
+                },
+                timeout_seconds=float(timeout),
+                max_bytes=5_000_000,
+            )
+
+            feed = feedparser.parse(result.text.encode("utf-8", errors="ignore"))
             if feed.bozo:
                 logger.warning("feed_parse_error", url=url, error=str(feed.bozo_exception))
             return feed
@@ -313,14 +329,23 @@ class FeedParser:
     def fetch_og_image(url: str, timeout: int = 10) -> Optional[str]:
         """Fetch the og:image from an article URL (for articles without embedded images)."""
         try:
+            from app.core.fetch import safe_fetch_text_sync
+            from app.core.ssrf import ssrf_policy_from_settings
+
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             }
-            response = requests.get(url, headers=headers, timeout=timeout, allow_redirects=True)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.text, 'html.parser')
+            policy = ssrf_policy_from_settings(enforce_allowlist=None)
+            result = safe_fetch_text_sync(
+                url,
+                policy=policy,
+                headers=headers,
+                timeout_seconds=float(timeout),
+                max_bytes=2_000_000,
+            )
+
+            soup = BeautifulSoup(result.text, 'html.parser')
             
             # Try og:image first
             og_image = soup.find('meta', property='og:image')
@@ -333,7 +358,7 @@ class FeedParser:
                 return FeedParser._resolve_url(twitter_image['content'], url)
             
             # Try to find main article image
-            return FeedParser._extract_image_from_html(response.text, url)
+            return FeedParser._extract_image_from_html(result.text, url)
             
         except Exception as e:
             logger.debug("og_image_fetch_failed", url=url, error=str(e))
@@ -459,14 +484,23 @@ class FeedParser:
         5. Common date patterns in page content
         """
         try:
+            from app.core.fetch import safe_fetch_text_sync
+            from app.core.ssrf import ssrf_policy_from_settings
+
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9',
             }
-            response = requests.get(url, headers=headers, timeout=timeout, allow_redirects=True)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.text, 'html.parser')
+            policy = ssrf_policy_from_settings(enforce_allowlist=None)
+            result = safe_fetch_text_sync(
+                url,
+                policy=policy,
+                headers=headers,
+                timeout_seconds=float(timeout),
+                max_bytes=2_000_000,
+            )
+
+            soup = BeautifulSoup(result.text, 'html.parser')
             
             # 1. Check Open Graph article:published_time
             og_date = soup.find('meta', property='article:published_time')

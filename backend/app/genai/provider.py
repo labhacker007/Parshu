@@ -15,8 +15,7 @@ def get_config_value(category: str, key: str) -> Optional[str]:
     try:
         from app.core.database import SessionLocal
         from app.models import SystemConfiguration
-        from cryptography.fernet import Fernet
-        import base64
+        from app.core.crypto import decrypt_config_secret
         
         db = SessionLocal()
         try:
@@ -28,13 +27,7 @@ def get_config_value(category: str, key: str) -> Optional[str]:
             if config and config.value:
                 # Decrypt if sensitive
                 if config.is_sensitive:
-                    try:
-                        encryption_key = settings.SECRET_KEY[:32].ljust(32, '0').encode()
-                        fernet_key = base64.urlsafe_b64encode(encryption_key)
-                        f = Fernet(fernet_key)
-                        return f.decrypt(config.value.encode()).decode()
-                    except Exception:
-                        return config.value  # Return as-is if decryption fails
+                    return decrypt_config_secret(config.value)
                 return config.value
         finally:
             db.close()
@@ -274,6 +267,19 @@ class OllamaProvider(BaseGenAIProvider):
     def __init__(self, base_url: str = None, model: str = None):
         self.base_url = base_url or settings.OLLAMA_BASE_URL or "http://localhost:11434"
         self.model = model or settings.OLLAMA_MODEL or "llama3:latest"
+        try:
+            from app.core.ssrf import SSRFPolicy, validate_outbound_url
+            validate_outbound_url(
+                self.base_url,
+                policy=SSRFPolicy(
+                    allow_private_ips=True,
+                    allow_loopback_ips=True,
+                    allowed_ports={80, 443, 11434},
+                ),
+            )
+        except Exception:
+            # Do not block startup; provider connectivity is validated at call time.
+            pass
         logger.info("ollama_provider_initialized", base_url=self.base_url, model=self.model)
     
     async def generate(self, system_prompt: str, user_prompt: str, **kwargs) -> str:

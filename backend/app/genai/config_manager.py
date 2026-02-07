@@ -193,6 +193,31 @@ class GenAIConfigManager:
             )
         
         return model
+
+    def validate_model_for_use_case(
+        self,
+        model_identifier: str,
+        use_case: Optional[str],
+        user_role: Optional[str] = None
+    ) -> GenAIModelRegistry:
+        """Ensure the requested model is allowed for this use case + role."""
+        model = self._validate_model(model_identifier)
+
+        allowed_use_cases = model.allowed_for_use_cases or []
+        if allowed_use_cases and use_case and use_case not in allowed_use_cases:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Model {model_identifier} not allowed for use case '{use_case}'"
+            )
+
+        restricted_roles = model.restricted_to_roles or []
+        if restricted_roles and user_role and user_role not in restricted_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Model {model_identifier} not available for role '{user_role}'"
+            )
+
+        return model
     
     def _check_quota(self, user_id: int, user_role: Optional[str] = None):
         """Check if user has exceeded quota."""

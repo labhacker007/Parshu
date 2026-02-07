@@ -1,0 +1,649 @@
+/* ============================================
+   THEME BASE STYLES
+   Core theme application for all elements
+   ============================================ */
+
+/* Force body background and text colors */
+html, body, #root {
+  background: var(--bg-body) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Ensure main container uses theme colors */
+.min-h-screen {
+  background: var(--bg-body) !important;
+}
+
+/* Fix any remaining white backgrounds */
+[class*="bg-white"],
+[class*="bg-gray-50"],
+[class*="bg-gray-100"],
+[class*="bg-slate-50"],
+[class*="bg-neutral-50"] {
+  background: var(--bg-card) !important;
+}
+
+/* Fix any remaining black text */
+[class*="text-black"],
+[class*="text-gray-900"],
+[class*="text-slate-900"] {
+  color: var(--text-primary) !important;
+}
+
+/* Fix any remaining gray text */
+[class*="text-gray-600"],
+[class*="text-gray-500"],
+[class*="text-slate-600"],
+[class*="text-neutral-600"] {
+  color: var(--text-secondary) !important;
+}
+
+/* Ensure all text elements use theme colors */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary) !important;
+}
+
+p, span, div {
+  color: inherit;
+}
+
+/* Fix headings that might be hardcoded */
+h1[class*="text-"],
+h2[class*="text-"],
+h3[class*="text-"],
+h4[class*="text-"] {
+  color: var(--text-primary) !important;
+}
+
+/* Ensure paragraphs use secondary text */
+p {
+  color: var(--text-secondary);
+}
+
+/* Fix any inline styles that might override */
+[style*="background: rgb(255"],
+[style*="background: #fff"],
+[style*="background-color: rgb(255"],
+[style*="background-color: #fff"] {
+  background: var(--bg-card) !important;
+}
+
+[style*="background: rgb(0"],
+[style*="background: #000"],
+[style*="background-color: rgb(0"],
+[style*="background-color: #000"] {
+  background: var(--bg-body) !important;
+}
+
+[style*="color: rgb(0"],
+[style*="color: #000"],
+[style*="color: rgb(17"],
+[style*="color: #111"] {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   ARTICLE QUEUE SPECIFIC FIXES
+   ============================================ */
+
+/* Fix article queue panels */
+.article-queue-container,
+.article-detail-panel,
+.article-list-panel {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Fix any gradient backgrounds */
+[style*="linear-gradient"] {
+  background: var(--bg-card) !important;
+}
+
+/* Fix summary panels */
+.summary-panel,
+.analysis-panel,
+.metadata-panel {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* ============================================
+   TABLE SPECIFIC FIXES
+   ============================================ */
+
+/* Ensure table cells have proper contrast */
+.ant-table-cell {
+  color: var(--text-secondary) !important;
+}
+
+.ant-table-cell a {
+  color: var(--primary) !important;
+}
+
+.ant-table-cell a:hover {
+  color: var(--primary-hover) !important;
+}
+
+/* Fix table headers */
+.ant-table-thead .ant-table-cell {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+
+/* Fix row hover */
+.ant-table-row:hover .ant-table-cell {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   MODAL & DRAWER SPECIFIC FIXES
+   ============================================ */
+
+/* Fix modal content */
+.ant-modal-content,
+.ant-modal-body {
+  background: var(--bg-card) !important;
+  color: var(--text-secondary) !important;
+}
+
+.ant-modal-header {
+  background: var(--bg-elevated) !important;
+  border-bottom-color: var(--border-subtle) !important;
+}
+
+.ant-modal-title {
+  color: var(--text-primary) !important;
+}
+
+/* Fix drawer content */
+.ant-drawer-body {
+  background: var(--bg-card) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Fix drawer header */
+.ant-drawer-header {
+  background: var(--bg-elevated) !important;
+  border-bottom-color: var(--border-subtle) !important;
+}
+
+.ant-drawer-title {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   FORM ELEMENT FIXES
+   ============================================ */
+
+/* Fix input text */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-picker {
+  color: var(--text-primary) !important;
+}
+
+/* Fix placeholder text */
+.ant-input::placeholder,
+.ant-select-selection-placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Fix select dropdown */
+.ant-select-item {
+  color: var(--text-secondary) !important;
+}
+
+.ant-select-item-option-selected {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+}
+
+/* ============================================
+   BUTTON SPECIFIC FIXES
+   ============================================ */
+
+/* Ensure button text is visible */
+.ant-btn {
+  color: var(--text-primary) !important;
+}
+
+.ant-btn-primary {
+  color: #fff !important;
+}
+
+.ant-btn-default:hover,
+.ant-btn-dashed:hover {
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+/* ============================================
+   BADGE & TAG FIXES
+   ============================================ */
+
+/* Fix badge text */
+.ant-badge-count {
+  color: #fff !important;
+}
+
+/* Fix tag text */
+.ant-tag {
+  color: var(--text-secondary) !important;
+}
+
+.ant-tag-has-color {
+  color: #fff !important;
+}
+
+/* ============================================
+   TAB FIXES
+   ============================================ */
+
+/* Fix tab text */
+.ant-tabs-tab {
+  color: var(--text-muted) !important;
+}
+
+.ant-tabs-tab-active {
+  color: var(--primary) !important;
+}
+
+/* Fix tab content */
+.ant-tabs-content {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   COLLAPSE FIXES
+   ============================================ */
+
+/* Fix collapse headers */
+.ant-collapse-header {
+  color: var(--text-primary) !important;
+}
+
+/* Fix collapse content */
+.ant-collapse-content-box {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   DESCRIPTIONS FIXES
+   ============================================ */
+
+/* Fix descriptions labels */
+.ant-descriptions-item-label {
+  color: var(--text-secondary) !important;
+}
+
+/* Fix descriptions content */
+.ant-descriptions-item-content {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   STATISTIC FIXES
+   ============================================ */
+
+/* Fix statistic titles */
+.ant-statistic-title {
+  color: var(--text-muted) !important;
+}
+
+/* Fix statistic values */
+.ant-statistic-content {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   LIST FIXES
+   ============================================ */
+
+/* Fix list items */
+.ant-list-item {
+  color: var(--text-secondary) !important;
+}
+
+.ant-list-item-meta-title {
+  color: var(--text-primary) !important;
+}
+
+.ant-list-item-meta-description {
+  color: var(--text-muted) !important;
+}
+
+/* ============================================
+   MENU FIXES
+   ============================================ */
+
+/* Fix menu items */
+.ant-menu-item {
+  color: var(--text-secondary) !important;
+}
+
+.ant-menu-item:hover {
+  color: var(--primary) !important;
+}
+
+.ant-menu-item-selected {
+  color: var(--primary) !important;
+  background: var(--primary-light) !important;
+}
+
+/* ============================================
+   STEPS FIXES
+   ============================================ */
+
+/* Fix step titles */
+.ant-steps-item-title {
+  color: var(--text-primary) !important;
+}
+
+/* Fix step descriptions */
+.ant-steps-item-description {
+  color: var(--text-muted) !important;
+}
+
+/* ============================================
+   TIMELINE FIXES
+   ============================================ */
+
+/* Fix timeline content */
+.ant-timeline-item-content {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   TREE FIXES
+   ============================================ */
+
+/* Fix tree nodes */
+.ant-tree-node-content-wrapper {
+  color: var(--text-secondary) !important;
+}
+
+.ant-tree-node-selected {
+  color: var(--primary) !important;
+  background: var(--primary-light) !important;
+}
+
+/* ============================================
+   CALENDAR FIXES
+   ============================================ */
+
+/* Fix calendar cells */
+.ant-picker-calendar-date {
+  color: var(--text-secondary) !important;
+}
+
+.ant-picker-calendar-date-value {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   SEGMENTED FIXES
+   ============================================ */
+
+/* Fix segmented options */
+.ant-segmented-item {
+  color: var(--text-secondary) !important;
+}
+
+.ant-segmented-item-selected {
+  color: #fff !important;
+}
+
+/* ============================================
+   PAGINATION FIXES
+   ============================================ */
+
+/* Fix pagination items */
+.ant-pagination-item a {
+  color: var(--text-secondary) !important;
+}
+
+.ant-pagination-item-active a {
+  color: #fff !important;
+}
+
+/* ============================================
+   RADIO & CHECKBOX FIXES
+   ============================================ */
+
+/* Fix radio labels */
+.ant-radio-wrapper {
+  color: var(--text-secondary) !important;
+}
+
+/* Fix checkbox labels */
+.ant-checkbox-wrapper {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   SWITCH FIXES
+   ============================================ */
+
+/* Fix switch labels if any */
+.ant-switch-inner {
+  color: #fff !important;
+}
+
+/* ============================================
+   SLIDER FIXES
+   ============================================ */
+
+/* Fix slider tooltip */
+.ant-slider-tooltip-inner {
+  color: #fff !important;
+}
+
+/* ============================================
+   RATE FIXES
+   ============================================ */
+
+/* Fix rate component */
+.ant-rate-star-first,
+.ant-rate-star-second {
+  color: var(--text-muted) !important;
+}
+
+/* ============================================
+   EMPTY FIXES
+   ============================================ */
+
+/* Fix empty description */
+.ant-empty-description {
+  color: var(--text-muted) !important;
+}
+
+/* ============================================
+   SPIN FIXES
+   ============================================ */
+
+/* Fix spin text */
+.ant-spin-text {
+  color: var(--text-muted) !important;
+}
+
+/* ============================================
+   PROGRESS FIXES
+   ============================================ */
+
+/* Fix progress text */
+.ant-progress-text {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   RESULT FIXES
+   ============================================ */
+
+/* Fix result component */
+.ant-result-title {
+  color: var(--text-primary) !important;
+}
+
+.ant-result-subtitle {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   ALERT FIXES
+   ============================================ */
+
+/* Fix alert messages */
+.ant-alert-message {
+  color: var(--text-primary) !important;
+}
+
+.ant-alert-description {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   MESSAGE FIXES
+   ============================================ */
+
+/* Fix message content */
+.ant-message-notice-content {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   NOTIFICATION FIXES
+   ============================================ */
+
+/* Fix notification */
+.ant-notification-notice {
+  background: var(--bg-card) !important;
+}
+
+.ant-notification-notice-message {
+  color: var(--text-primary) !important;
+}
+
+.ant-notification-notice-description {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   POPOVER FIXES
+   ============================================ */
+
+/* Fix popover */
+.ant-popover-inner {
+  background: var(--bg-card) !important;
+}
+
+.ant-popover-title {
+  color: var(--text-primary) !important;
+}
+
+.ant-popover-inner-content {
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================
+   TOOLTIP FIXES
+   ============================================ */
+
+/* Fix tooltip */
+.ant-tooltip-inner {
+  color: #fff !important;
+}
+
+/* ============================================
+   DROPDOWN FIXES
+   ============================================ */
+
+/* Fix dropdown */
+.ant-dropdown-menu {
+  background: var(--bg-card) !important;
+}
+
+.ant-dropdown-menu-item {
+  color: var(--text-secondary) !important;
+}
+
+.ant-dropdown-menu-item:hover {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ============================================
+   BACKTOP FIXES
+   ============================================ */
+
+/* Fix backtop */
+.ant-back-top {
+  color: #fff !important;
+}
+
+/* ============================================
+   ANCHOR FIXES
+   ============================================ */
+
+/* Fix anchor */
+.ant-anchor-link-title {
+  color: var(--text-secondary) !important;
+}
+
+.ant-anchor-link-title-active {
+  color: var(--primary) !important;
+}
+
+/* ============================================
+   AFFIX FIXES
+   ============================================ */
+
+/* Fix affix */
+.ant-affix {
+  background: var(--bg-card) !important;
+}
+
+/* ============================================
+   CONFIG PROVIDER FIXES
+   ============================================ */
+
+/* Ensure ConfigProvider doesn't override our theme */
+.ant-config-provider {
+  color: inherit;
+}
+
+/* ============================================
+   PAGE SPECIFIC FIXES
+   ============================================ */
+
+/* Article Queue page */
+.article-queue-page,
+.news-feeds-page,
+.intelligence-page,
+.hunts-page,
+.reports-page,
+.sources-page,
+.watchlist-page {
+  background: var(--bg-body) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Fix any white overlay divs */
+[class*="overlay"],
+[class*="backdrop"] {
+  background: var(--bg-overlay) !important;
+}
+
+/* Fix any content areas */
+[class*="content"],
+[class*="main"] {
+  background: transparent !important;
+}
+
+/* Fix sidebar and header areas */
+[class*="sidebar"],
+[class*="navbar"],
+[class*="header"] {
+  background: var(--bg-navbar) !important;
+}

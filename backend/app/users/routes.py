@@ -235,7 +235,10 @@ async def get_my_permissions(
         "is_impersonating": is_impersonating,
         "original_role": original_role_value,
         "accessible_pages": accessible_pages,
+        # Backward-compatible field name (used by older clients)
         "api_permissions": api_permissions,
+        # Preferred field name (used by current frontend)
+        "all_permissions": api_permissions,
     }
 
 

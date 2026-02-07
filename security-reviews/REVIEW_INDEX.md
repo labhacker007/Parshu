@@ -1,0 +1,328 @@
+﻿# Security Review Index
+
+Generated: 2026-02-02
+
+## Progress
+
+- Tracked files: 304
+- Reviewed so far: 15
+
+Reviewed reports live under security-reviews/ mirroring file paths.
+
+## Backend
+
+- [ ] `backend/.env.example`
+- [ ] `backend/app/__init__.py`
+- [ ] `backend/app/admin/__init__.py`
+- [ ] `backend/app/admin/rbac_service.py`
+- [x] `backend/app/admin/routes.py`
+- [ ] `backend/app/analytics/__init__.py`
+- [ ] `backend/app/analytics/routes.py`
+- [ ] `backend/app/articles/__init__.py`
+- [ ] `backend/app/articles/duplicate_checker.py`
+- [x] `backend/app/articles/routes.py`
+- [ ] `backend/app/articles/schemas.py`
+- [ ] `backend/app/articles/service.py`
+- [ ] `backend/app/audit/__init__.py`
+- [ ] `backend/app/audit/manager.py`
+- [ ] `backend/app/audit/middleware.py`
+- [ ] `backend/app/audit/routes.py`
+- [ ] `backend/app/auth/__init__.py`
+- [ ] `backend/app/auth/comprehensive_permissions.py`
+- [x] `backend/app/auth/dependencies.py`
+- [x] `backend/app/auth/page_permissions.py`
+- [x] `backend/app/auth/rbac.py`
+- [x] `backend/app/auth/saml.py`
+- [ ] `backend/app/auth/schemas.py`
+- [x] `backend/app/auth/security.py`
+- [x] `backend/app/auth/unified_permissions.py`
+- [ ] `backend/app/automation/__init__.py`
+- [ ] `backend/app/automation/engine.py`
+- [ ] `backend/app/automation/routes.py`
+- [ ] `backend/app/automation/scheduler.py`
+- [ ] `backend/app/chatbot/__init__.py`
+- [ ] `backend/app/chatbot/routes.py`
+- [ ] `backend/app/chatbot/service.py`
+- [ ] `backend/app/cli.py`
+- [ ] `backend/app/connectors/routes.py`
+- [ ] `backend/app/connectors/schemas.py`
+- [ ] `backend/app/core/__init__.py`
+- [x] `backend/app/core/config.py`
+- [ ] `backend/app/core/database.py`
+- [ ] `backend/app/core/logging.py`
+- [x] `backend/app/core/rate_limit.py`
+- [ ] `backend/app/extraction/__init__.py`
+- [ ] `backend/app/extraction/extractor.py`
+- [ ] `backend/app/extraction/ioc_types.py`
+- [ ] `backend/app/genai/__init__.py`
+- [ ] `backend/app/genai/config_manager.py`
+- [ ] `backend/app/genai/models.py`
+- [ ] `backend/app/genai/prompts.py`
+- [ ] `backend/app/genai/prompts/hunt_query_v1.txt`
+- [x] `backend/app/genai/provider.py`
+- [x] `backend/app/genai/routes.py`
+- [ ] `backend/app/genai/testing.py`
+- [ ] `backend/app/genai/unified_service.py`
+- [ ] `backend/app/guardrails/__init__.py`
+- [ ] `backend/app/guardrails/cybersecurity_guardrails.py`
+- [ ] `backend/app/guardrails/duplicate_detector.py`
+- [ ] `backend/app/guardrails/guardrail_routes.py`
+- [ ] `backend/app/guardrails/routes.py`
+- [ ] `backend/app/guardrails/testing_service.py`
+- [ ] `backend/app/hunts/__init__.py`
+- [ ] `backend/app/hunts/connectors.py`
+- [ ] `backend/app/hunts/routes.py`
+- [ ] `backend/app/hunts/tracking.py`
+- [ ] `backend/app/ingestion/__init__.py`
+- [x] `backend/app/ingestion/parser.py`
+- [ ] `backend/app/ingestion/tasks.py`
+- [ ] `backend/app/integrations/__init__.py`
+- [ ] `backend/app/integrations/refresh_settings.py`
+- [ ] `backend/app/integrations/sources.py`
+- [ ] `backend/app/intelligence/__init__.py`
+- [ ] `backend/app/intelligence/association.py`
+- [ ] `backend/app/intelligence/canonicalizer.py`
+- [ ] `backend/app/intelligence/orchestrator.py`
+- [ ] `backend/app/intelligence/routes.py`
+- [ ] `backend/app/intelligence/similarity.py`
+- [x] `backend/app/iocs/routes.py`
+- [ ] `backend/app/knowledge/__init__.py`
+- [x] `backend/app/knowledge/crawler.py`
+- [x] `backend/app/knowledge/routes.py`
+- [x] `backend/app/knowledge/service.py`
+- [x] `backend/app/main.py`
+- [ ] `backend/app/models.py`
+- [ ] `backend/app/models_agentic.py`
+- [ ] `backend/app/models_report_version.py`
+- [ ] `backend/app/notifications/__init__.py`
+- [ ] `backend/app/notifications/provider.py`
+- [ ] `backend/app/notifications/servicenow.py`
+- [ ] `backend/app/reports/__init__.py`
+- [x] `backend/app/reports/routes.py`
+- [ ] `backend/app/reports/version_control.py`
+- [x] `backend/app/routers/__init__.py`
+- [ ] `backend/app/seeds.py`
+- [ ] `backend/app/users/__init__.py`
+- [x] `backend/app/users/feeds.py`
+- [x] `backend/app/users/routes.py`
+- [ ] `backend/app/watchlist/__init__.py`
+- [ ] `backend/app/watchlist/routes.py`
+- [ ] `backend/create_genai_tables.sql`
+- [ ] `backend/Dockerfile`
+- [ ] `backend/migrations/env.py`
+- [ ] `backend/migrations/versions/001_initial_schema.py`
+- [ ] `backend/migrations/versions/002_add_advanced_features.py`
+- [ ] `backend/migrations/versions/003_add_intelligence_review_columns.py`
+- [ ] `backend/migrations/versions/004_add_knowledge_base_tables.py`
+- [ ] `backend/migrations/versions/005_add_hunt_enhancements.py`
+- [ ] `backend/migrations/versions/006_add_report_edit_workflow.py`
+- [ ] `backend/migrations/versions/007_add_rbac_tables.py`
+- [ ] `backend/migrations/versions/008_ioc_article_many_to_many.py`
+- [ ] `backend/migrations/versions/010_add_report_versions.py`
+- [ ] `backend/migrations/versions/011_add_feed_source_refresh_columns.py`
+- [ ] `backend/migrations/versions/012_add_agentic_intelligence.py`
+- [ ] `backend/migrations/versions/013_add_genai_configuration.py`
+- [ ] `backend/migrations/versions/014_add_hunt_tracking.py`
+- [ ] `backend/migrations/versions/015_add_query_versioning.py`
+- [ ] `backend/migrations/versions/016_add_guardrails_tables.py`
+- [ ] `backend/migrations/versions/017_add_ingested_at_column.py`
+- [ ] `backend/migrations/versions/018_add_pluggable_connectors.py`
+- [ ] `backend/migrations/versions/019_add_scheduler_audit_event_types.py`
+- [ ] `backend/requirements.txt`
+- [ ] `backend/run.py`
+- [ ] `backend/tests/conftest.py`
+- [ ] `backend/tests/test_auth_flow.py`
+- [ ] `backend/tests/test_connectors.py`
+- [ ] `backend/tests/test_connectors_api.py`
+- [ ] `backend/tests/test_connectors_crud.py`
+- [ ] `backend/tests/test_connectors_test_by_id.py`
+- [ ] `backend/tests/test_feed_parser.py`
+- [ ] `backend/tests/test_hunt_connectors.py`
+- [ ] `backend/tests/test_hunt_execution_flow.py`
+- [ ] `backend/tests/test_models.py`
+
+## Frontend
+
+- [ ] `frontend/.eslintrc.json`
+- [ ] `frontend/Dockerfile`
+- [ ] `frontend/e2e/tests/connectors.spec.js`
+- [ ] `frontend/e2e/tests/login.spec.js`
+- [ ] `frontend/package.json`
+- [ ] `frontend/package-lock.json`
+- [ ] `frontend/playwright.config.js`
+- [ ] `frontend/src/__mocks__/axios.js`
+- [ ] `frontend/src/api/client.js`
+- [ ] `frontend/src/App.css`
+- [ ] `frontend/src/App.js`
+- [ ] `frontend/src/components/AnalyticsDashboard.css`
+- [ ] `frontend/src/components/AnalyticsDashboard.js`
+- [ ] `frontend/src/components/ArchitectureDocs.css`
+- [ ] `frontend/src/components/ArchitectureDocs.js`
+- [ ] `frontend/src/components/Chatbot.css`
+- [ ] `frontend/src/components/Chatbot.js`
+- [ ] `frontend/src/components/ComprehensiveGenAILab.css`
+- [ ] `frontend/src/components/ComprehensiveGenAILab.js`
+- [ ] `frontend/src/components/ComprehensiveRBACManager.css`
+- [ ] `frontend/src/components/ComprehensiveRBACManager.js`
+- [ ] `frontend/src/components/ConfigurationManager.js`
+- [ ] `frontend/src/components/ConnectorsManager.css`
+- [ ] `frontend/src/components/ConnectorsManager.js`
+- [ ] `frontend/src/components/FormattedContent.css`
+- [ ] `frontend/src/components/FormattedContent.js`
+- [ ] `frontend/src/components/GenAITester.js`
+- [ ] `frontend/src/components/GuardrailsManager.css`
+- [ ] `frontend/src/components/GuardrailsManager.js`
+- [ ] `frontend/src/components/KnowledgeBaseManager.css`
+- [ ] `frontend/src/components/KnowledgeBaseManager.js`
+- [ ] `frontend/src/components/NavBar.js`
+- [ ] `frontend/src/components/PageAccessManager.js`
+- [ ] `frontend/src/components/ProtectedRoute.js`
+- [ ] `frontend/src/components/RAGDashboard.css`
+- [ ] `frontend/src/components/RAGDashboard.js`
+- [ ] `frontend/src/components/RBACManager.js`
+- [ ] `frontend/src/components/ReportVersionControl.js`
+- [ ] `frontend/src/components/SchedulerManager.js`
+- [ ] `frontend/src/components/SimpleAccessManager.js`
+- [ ] `frontend/src/components/SourceRefreshSettings.js`
+- [ ] `frontend/src/components/ThemeManager.css`
+- [ ] `frontend/src/components/ThemeManager.js`
+- [ ] `frontend/src/components/TimeDisplay.js`
+- [ ] `frontend/src/components/TimezoneSettings.css`
+- [ ] `frontend/src/components/TimezoneSettings.js`
+- [ ] `frontend/src/components/UnifiedUserManagement.css`
+- [ ] `frontend/src/components/UnifiedUserManagement.js`
+- [ ] `frontend/src/components/UserManagement.js`
+- [ ] `frontend/src/context/ThemeContext.js`
+- [ ] `frontend/src/context/TimezoneContext.js`
+- [ ] `frontend/src/hooks/useHuntLauncher.js`
+- [ ] `frontend/src/hooks/usePermissions.js`
+- [ ] `frontend/src/index.js`
+- [ ] `frontend/src/pages/__tests__/Login.test.js`
+- [ ] `frontend/src/pages/Admin.css`
+- [ ] `frontend/src/pages/Admin.js`
+- [ ] `frontend/src/pages/ArticleQueue.css`
+- [ ] `frontend/src/pages/ArticleQueue.js`
+- [ ] `frontend/src/pages/AuditLogs.css`
+- [ ] `frontend/src/pages/AuditLogs.js`
+- [ ] `frontend/src/pages/Dashboard.css`
+- [ ] `frontend/src/pages/Dashboard.js`
+- [ ] `frontend/src/pages/Hunts.css`
+- [ ] `frontend/src/pages/Hunts.js`
+- [ ] `frontend/src/pages/Intelligence.css`
+- [ ] `frontend/src/pages/Intelligence.js`
+- [ ] `frontend/src/pages/IntelNews.css`
+- [ ] `frontend/src/pages/IntelNews.js`
+- [ ] `frontend/src/pages/Login.css`
+- [x] `frontend/src/pages/Login.js`
+- [ ] `frontend/src/pages/NewsFeeds.css`
+- [ ] `frontend/src/pages/NewsFeeds.js`
+- [ ] `frontend/src/pages/NewsIntel.css`
+- [ ] `frontend/src/pages/NewsIntel.js`
+- [ ] `frontend/src/pages/NewsIntelImproved.js`
+- [ ] `frontend/src/pages/Reports.css`
+- [ ] `frontend/src/pages/Reports.js`
+- [ ] `frontend/src/pages/Sources.css`
+- [ ] `frontend/src/pages/Sources.js`
+- [ ] `frontend/src/pages/Unauthorized.js`
+- [ ] `frontend/src/pages/Watchlist.css`
+- [ ] `frontend/src/pages/Watchlist.js`
+- [ ] `frontend/src/setupTests.js`
+- [ ] `frontend/src/store/index.js`
+- [ ] `frontend/src/styles/theme.css`
+- [ ] `frontend/src/styles/themes.js`
+
+## Infra
+
+- [x] `docker-compose.yml`
+- [x] `docker-compose.dev.yml`
+- [x] `infra/Dockerfile.backend`
+- [x] `infra/Dockerfile.frontend`
+- [ ] `infra/Dockerfile.frontend.dev`
+- [ ] `infra/Dockerfile.tools`
+- [x] `infra/k8s-manifests.yaml`
+- [x] `infra/namespace.yaml`
+
+## Repo Root + Other
+
+- [ ] `.env.production.example`
+- [ ] `.gitignore`
+- [ ] `AGENTIC_INTELLIGENCE_COMPLETE.md`
+- [ ] `AGENTIC_INTELLIGENCE_IMPLEMENTATION.md`
+- [ ] `check-status.sh`
+- [ ] `CODE_REVIEW_FINDINGS.md`
+- [ ] `CODE_REVIEW_SUMMARY.md`
+- [ ] `COMPLETE_DEPLOYMENT_SUMMARY.md`
+- [ ] `COMPLETE_ENHANCEMENTS_SUMMARY.md`
+- [ ] `COMPLETE_IMPLEMENTATION_SUMMARY.md`
+- [ ] `COMPLETE_IMPLEMENTATION_SUMMARY_JAN28.md`
+- [ ] `COMPREHENSIVE_FIXES.md`
+- [ ] `COMPREHENSIVE_IMPROVEMENTS_V2.md`
+- [ ] `config/seed-sources.json`
+- [ ] `CRITICAL_ISSUES_AND_STATUS.md`
+- [ ] `CYBERSECURITY_GUARDRAILS_COMPLETE.md`
+- [ ] `DEPLOYMENT_IOC_FEED_FIXES.md`
+- [ ] `DEPLOYMENT_STATUS.md`
+- [ ] `DEPLOYMENT_SUMMARY.md`
+- [ ] `env.example`
+- [ ] `EXISTING_FEATURES.md`
+- [ ] `FEATURE_IMPLEMENTATION_COMPLETE.md`
+- [ ] `FINAL_FIXES_SUMMARY.md`
+- [ ] `fix_database.sql`
+- [ ] `FIXES_APPLIED.md`
+- [ ] `FIXES_COMPLETED_STATUS.md`
+- [ ] `GENAI_CONFIG_FIXES_APPLIED.md`
+- [ ] `GENAI_CONFIG_IMPLEMENTATION_COMPLETE.md`
+- [ ] `GENAI_MODEL_CONFIGURATION_PROPOSAL.md`
+- [ ] `GENAI_SECURE_CONFIGURATION_IMPLEMENTATION.md`
+- [ ] `GENAI_TESTING_LAB_COMPLETE.md`
+- [ ] `HUNT_TRACKING_IMPLEMENTATION.md`
+- [ ] `IMPLEMENTATION_COMPLETE.md`
+- [ ] `IMPLEMENTATION_PLAN.md`
+- [ ] `IMPLEMENTATION_STATUS.md`
+- [ ] `IMPLEMENTATION_SUMMARY.md`
+- [ ] `ISSUES_SUMMARY.md`
+- [ ] `KNOWLEDGE_BASE_AND_IOC_FIXES.md`
+- [ ] `LAUNCH_GUIDE.md`
+- [ ] `LICENSE`
+- [ ] `LOGIN_FIX_SUMMARY.md`
+- [ ] `LOGIN_FIXED_AND_GENAI_CONFIG_READY.md`
+- [ ] `NEWS_INTEL_AND_REPORTS_IMPROVEMENTS.md`
+- [ ] `NEWS_INTEL_FIXES.md`
+- [ ] `OPERATIONALIZATION_ROADMAP.md`
+- [ ] `ORION_COMPLETE_FEATURE_MATRIX.md`
+- [ ] `ORION_COMPLETE_SPECIFICATION.md`
+- [ ] `PHASE1_COMPLETE.md`
+- [ ] `QUICK_FIX_GUIDE.md`
+- [ ] `QUICK_LOGIN_GUIDE.md`
+- [ ] `QUICK_START.txt`
+- [ ] `QUICK_START_GUIDE.md`
+- [ ] `RBAC_AND_INTELNEWS_DEPLOYMENT.md`
+- [ ] `RBAC_IMPLEMENTATION.md`
+- [ ] `README.md`
+- [ ] `REPORT_EDITING_FEATURE.md`
+- [ ] `REQUIREMENTS_CHECKLIST.md`
+- [ ] `REVIEW_COMPLETE.md`
+- [ ] `ROLLBACK_SECURITY_CHANGES.md`
+- [ ] `run_backend.py`
+- [ ] `SECURITY.md`
+- [ ] `SECURITY_FIXES_APPLIED.md`
+- [ ] `security-reviews/backend/app/auth/dependencies.py.md`
+- [ ] `security-reviews/backend/app/auth/page_permissions.py.md`
+- [ ] `security-reviews/backend/app/core/config.py.md`
+- [ ] `security-reviews/backend/app/core/rate_limit.py.md`
+- [ ] `security-reviews/backend/app/genai/routes.py.md`
+- [ ] `security-reviews/backend/app/main.py.md`
+- [ ] `security-reviews/docker-compose.yml.md`
+- [ ] `security-reviews/infra/Dockerfile.backend.md`
+- [ ] `security-reviews/ISSUES.md`
+- [ ] `security-reviews/METHODOLOGY.md`
+- [ ] `security-reviews/REVIEW_INDEX.md`
+- [ ] `Start Orion.command`
+- [ ] `start-dev.sh`
+- [ ] `start-frontend.sh`
+- [ ] `start-orion.sh`
+- [ ] `stop-orion.sh`
+- [ ] `test_api.sh`
+- [ ] `test_features.sh`
+- [ ] `TEST_REPORT.md`
+

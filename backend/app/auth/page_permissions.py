@@ -101,7 +101,7 @@ PAGE_DEFINITIONS: Dict[str, PageDefinition] = {
         description="Main overview dashboard",
         category="Overview",
         permissions=[PagePermission.VIEW_DASHBOARD.value],
-        default_roles=["ADMIN", "TI", "TH", "IR", "VIEWER"]
+        default_roles=["ADMIN", "EXECUTIVE", "MANAGER", "TI", "TH", "IR", "VIEWER"]
     ),
     "feed": PageDefinition(
         page_key="feed",
@@ -113,7 +113,7 @@ PAGE_DEFINITIONS: Dict[str, PageDefinition] = {
             PagePermission.VIEW_FEED.value,
             PagePermission.MANAGE_FEED_SOURCES.value
         ],
-        default_roles=["ADMIN", "TI", "TH", "IR", "VIEWER"]
+        default_roles=["ADMIN", "EXECUTIVE", "MANAGER", "TI", "TH", "IR", "VIEWER"]
     ),
     "articles": PageDefinition(
         page_key="articles",
@@ -128,7 +128,7 @@ PAGE_DEFINITIONS: Dict[str, PageDefinition] = {
             PagePermission.ASSIGN_ARTICLES.value,
             PagePermission.TRIAGE_ARTICLES.value
         ],
-        default_roles=["ADMIN", "TI", "TH", "IR"]
+        default_roles=["ADMIN", "EXECUTIVE", "MANAGER", "TI", "TH", "IR"]
     ),
     "article_detail": PageDefinition(
         page_key="article_detail",
@@ -158,7 +158,7 @@ PAGE_DEFINITIONS: Dict[str, PageDefinition] = {
             PagePermission.DELETE_INTELLIGENCE.value,
             PagePermission.EXPORT_INTELLIGENCE.value
         ],
-        default_roles=["ADMIN", "TI", "TH", "IR"]
+        default_roles=["ADMIN", "EXECUTIVE", "MANAGER", "TI", "TH", "IR"]
     ),
     "hunts": PageDefinition(
         page_key="hunts",
@@ -174,7 +174,7 @@ PAGE_DEFINITIONS: Dict[str, PageDefinition] = {
             PagePermission.DELETE_HUNTS.value,
             PagePermission.VIEW_HUNT_RESULTS.value
         ],
-        default_roles=["ADMIN", "TH"]
+        default_roles=["ADMIN", "EXECUTIVE", "MANAGER", "TI", "TH", "IR"]
     ),
     "reports": PageDefinition(
         page_key="reports",
@@ -191,7 +191,7 @@ PAGE_DEFINITIONS: Dict[str, PageDefinition] = {
             PagePermission.SHARE_REPORTS.value,
             PagePermission.EXPORT_REPORTS.value
         ],
-        default_roles=["ADMIN", "TI"]
+        default_roles=["ADMIN", "EXECUTIVE", "MANAGER", "TI", "TH", "IR"]
     ),
     "connectors": PageDefinition(
         page_key="connectors",
@@ -240,7 +240,7 @@ PAGE_DEFINITIONS: Dict[str, PageDefinition] = {
             PagePermission.VIEW_AUDIT.value,
             PagePermission.EXPORT_AUDIT.value
         ],
-        default_roles=["ADMIN"]
+        default_roles=["ADMIN", "MANAGER"]
     ),
     "admin": PageDefinition(
         page_key="admin",
@@ -297,6 +297,56 @@ def get_default_page_access_for_role(role: str) -> List[str]:
 # Default page permission mappings for each role
 DEFAULT_ROLE_PAGE_PERMISSIONS = {
     "ADMIN": [p.value for p in PagePermission],  # All permissions
+    "EXECUTIVE": [
+        # Dashboard
+        PagePermission.VIEW_DASHBOARD.value,
+        # Feed
+        PagePermission.VIEW_FEED.value,
+        # Articles
+        PagePermission.VIEW_ARTICLES.value,
+        # Article Detail
+        PagePermission.VIEW_ARTICLE_CONTENT.value,
+        # Intelligence
+        PagePermission.VIEW_INTELLIGENCE.value,
+        PagePermission.EXPORT_INTELLIGENCE.value,
+        # Hunts
+        PagePermission.VIEW_HUNTS.value,
+        PagePermission.VIEW_HUNT_RESULTS.value,
+        # Reports
+        PagePermission.VIEW_REPORTS.value,
+        PagePermission.EXPORT_REPORTS.value,
+        # Sources
+        PagePermission.VIEW_SOURCES.value,
+    ],
+    "MANAGER": [
+        # Dashboard
+        PagePermission.VIEW_DASHBOARD.value,
+        # Feed
+        PagePermission.VIEW_FEED.value,
+        # Articles
+        PagePermission.VIEW_ARTICLES.value,
+        PagePermission.TRIAGE_ARTICLES.value,
+        # Article Detail
+        PagePermission.VIEW_ARTICLE_CONTENT.value,
+        PagePermission.VIEW_ARTICLE_INTELLIGENCE.value,
+        PagePermission.VIEW_ARTICLE_HUNTS.value,
+        # Intelligence
+        PagePermission.VIEW_INTELLIGENCE.value,
+        PagePermission.EXPORT_INTELLIGENCE.value,
+        # Hunts
+        PagePermission.VIEW_HUNTS.value,
+        PagePermission.VIEW_HUNT_RESULTS.value,
+        # Reports
+        PagePermission.VIEW_REPORTS.value,
+        PagePermission.CREATE_REPORTS.value,
+        PagePermission.SHARE_REPORTS.value,
+        PagePermission.EXPORT_REPORTS.value,
+        # Audit
+        PagePermission.VIEW_AUDIT.value,
+        PagePermission.EXPORT_AUDIT.value,
+        # Sources
+        PagePermission.VIEW_SOURCES.value,
+    ],
     "TI": [
         # Dashboard
         PagePermission.VIEW_DASHBOARD.value,

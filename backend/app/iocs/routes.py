@@ -36,7 +36,7 @@ def get_ioc_types(
         logger.error("failed_to_get_ioc_types", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get IOC types: {str(e)}"
+            detail="Failed to get IOC types"
         )
 
 
@@ -127,7 +127,7 @@ def list_iocs(
         logger.error("failed_to_list_iocs", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list IOCs: {str(e)}"
+            detail="Failed to list IOCs"
         )
 
 
@@ -182,7 +182,7 @@ def get_ioc(
         logger.error("failed_to_get_ioc", ioc_id=ioc_id, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get IOC: {str(e)}"
+            detail="Failed to get IOC"
         )
 
 
@@ -223,7 +223,7 @@ def search_ioc_by_value(
         logger.error("failed_to_search_ioc", value=value, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to search IOC: {str(e)}"
+            detail="Failed to search IOC"
         )
 
 
@@ -277,7 +277,7 @@ def get_article_iocs(
         logger.error("failed_to_get_article_iocs", article_id=article_id, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get article IOCs: {str(e)}"
+            detail="Failed to get article IOCs"
         )
 
 
@@ -318,5 +318,5 @@ def get_ioc_stats(
         logger.error("failed_to_get_ioc_stats", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get IOC stats: {str(e)}"
+            detail="Failed to get IOC stats"
         )

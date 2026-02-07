@@ -19,7 +19,7 @@ from pathlib import Path
 import httpx
 
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, and_, or_
 
 from app.core.config import settings
 from app.core.logging import logger
@@ -528,7 +528,10 @@ class KnowledgeService:
         target_platform: str = None,
         doc_type: KnowledgeDocumentType = None,
         top_k: int = 5,
-        min_similarity: float = 0.3
+        min_similarity: float = 0.3,
+        uploaded_by_id: Optional[int] = None,
+        include_admin_managed: bool = True,
+        include_user_managed: bool = True,
     ) -> List[Dict[str, Any]]:
         """Search knowledge base for relevant chunks."""
         # Get query embedding
@@ -542,6 +545,22 @@ class KnowledgeService:
             KnowledgeDocument.status == KnowledgeDocumentStatus.READY,
             KnowledgeDocument.is_active == True
         )
+
+        if uploaded_by_id is not None:
+            allowed = []
+            if include_admin_managed:
+                allowed.append(KnowledgeDocument.is_admin_managed == True)
+            if include_user_managed:
+                allowed.append(
+                    and_(
+                        KnowledgeDocument.is_admin_managed == False,
+                        KnowledgeDocument.uploaded_by_id == uploaded_by_id,
+                    )
+                )
+            if allowed:
+                doc_query = doc_query.filter(or_(*allowed))
+            else:
+                return []
         
         if doc_type:
             doc_query = doc_query.filter(KnowledgeDocument.doc_type == doc_type)

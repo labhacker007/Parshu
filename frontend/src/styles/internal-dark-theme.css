@@ -1,0 +1,447 @@
+/* Dark Theme Override for All Internal Pages */
+
+/* Force dark background on all internal page content */
+.internal-page {
+  background: #0a0f1c !important;
+  color: #e2e8f0 !important;
+}
+
+/* Ant Design Card Dark Override */
+.internal-page .ant-card {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 12px !important;
+}
+
+.internal-page .ant-card-head {
+  background: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+.internal-page .ant-card-head-title {
+  color: #f8fafc !important;
+}
+
+.internal-page .ant-card-body {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+/* Statistic Dark Override */
+.internal-page .ant-statistic-title {
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.internal-page .ant-statistic-content {
+  color: #f8fafc !important;
+}
+
+.internal-page .ant-statistic-content-value {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+}
+
+/* Table Dark Override */
+.internal-page .ant-table {
+  background: #0f172a !important;
+}
+
+.internal-page .ant-table-thead > tr > th {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+  border-bottom: 1px solid #334155 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.internal-page .ant-table-tbody > tr > td {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+.internal-page .ant-table-tbody > tr:hover > td {
+  background: #1e293b !important;
+}
+
+/* Tabs Dark Override */
+.internal-page .ant-tabs-nav {
+  border-bottom: 1px solid #1e293b !important;
+}
+
+.internal-page .ant-tabs-tab {
+  color: #94a3b8 !important;
+}
+
+.internal-page .ant-tabs-tab-active {
+  color: #06b6d4 !important;
+}
+
+.internal-page .ant-tabs-ink-bar {
+  background: #06b6d4 !important;
+}
+
+/* Button Dark Override */
+.internal-page .ant-btn-default {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-btn-default:hover {
+  border-color: #06b6d4 !important;
+  color: #06b6d4 !important;
+}
+
+.internal-page .ant-btn-primary {
+  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%) !important;
+  border: none !important;
+  color: white !important;
+}
+
+.internal-page .ant-btn-primary:hover {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.4) !important;
+}
+
+/* Input Dark Override */
+.internal-page .ant-input,
+.internal-page .ant-input-number {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-input:focus,
+.internal-page .ant-input-number:focus {
+  border-color: #06b6d4 !important;
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2) !important;
+}
+
+.internal-page .ant-input::placeholder {
+  color: #64748b !important;
+}
+
+/* Select Dark Override */
+.internal-page .ant-select-selector {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-select-selection-placeholder {
+  color: #64748b !important;
+}
+
+/* Tag Dark Override */
+.internal-page .ant-tag {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-tag-blue {
+  background: rgba(6, 182, 212, 0.1) !important;
+  color: #06b6d4 !important;
+  border-color: rgba(6, 182, 212, 0.3) !important;
+}
+
+.internal-page .ant-tag-green {
+  background: rgba(34, 197, 94, 0.1) !important;
+  color: #22c55e !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+}
+
+.internal-page .ant-tag-red {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.internal-page .ant-tag-orange {
+  background: rgba(234, 179, 8, 0.1) !important;
+  color: #eab308 !important;
+  border-color: rgba(234, 179, 8, 0.3) !important;
+}
+
+.internal-page .ant-tag-purple {
+  background: rgba(168, 85, 247, 0.1) !important;
+  color: #a855f7 !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+
+/* Badge Dark Override */
+.internal-page .ant-badge-count {
+  background: #ef4444 !important;
+  box-shadow: none !important;
+}
+
+/* Empty State Dark Override */
+.internal-page .ant-empty-description {
+  color: #64748b !important;
+}
+
+/* Typography Dark Override */
+.internal-page .ant-typography {
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-typography-secondary {
+  color: #94a3b8 !important;
+}
+
+/* Modal Dark Override */
+.internal-page .ant-modal-content {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+}
+
+.internal-page .ant-modal-header {
+  background: #0f172a !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+.internal-page .ant-modal-title {
+  color: #f8fafc !important;
+}
+
+.internal-page .ant-modal-close {
+  color: #94a3b8 !important;
+}
+
+/* Divider Dark Override */
+.internal-page .ant-divider {
+  border-color: #1e293b !important;
+}
+
+/* Pagination Dark Override */
+.internal-page .ant-pagination-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.internal-page .ant-pagination-item a {
+  color: #94a3b8 !important;
+}
+
+.internal-page .ant-pagination-item-active {
+  background: #06b6d4 !important;
+  border-color: #06b6d4 !important;
+}
+
+.internal-page .ant-pagination-item-active a {
+  color: white !important;
+}
+
+.internal-page .ant-pagination-prev button,
+.internal-page .ant-pagination-next button {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+/* Alert Dark Override */
+.internal-page .ant-alert-info {
+  background: rgba(6, 182, 212, 0.1) !important;
+  border-color: rgba(6, 182, 212, 0.3) !important;
+}
+
+.internal-page .ant-alert-message {
+  color: #06b6d4 !important;
+}
+
+/* Spin Dark Override */
+.internal-page .ant-spin-text {
+  color: #94a3b8 !important;
+}
+
+/* Progress Dark Override */
+.internal-page .ant-progress-text {
+  color: #94a3b8 !important;
+}
+
+/* Dropdown Dark Override */
+.internal-page .ant-dropdown-menu {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+}
+
+.internal-page .ant-dropdown-menu-item {
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-dropdown-menu-item:hover {
+  background: #1e293b !important;
+}
+
+/* Tooltip Dark Override */
+.internal-page .ant-tooltip-inner {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+}
+
+/* Popconfirm Dark Override */
+.internal-page .ant-popover-inner {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+}
+
+.internal-page .ant-popover-title {
+  color: #f8fafc !important;
+}
+
+.internal-page .ant-popover-inner-content {
+  color: #e2e8f0 !important;
+}
+
+/* Space Dark Override */
+.internal-page .ant-space-item {
+  color: #e2e8f0 !important;
+}
+
+/* Row/Col Dark Override */
+.internal-page .ant-row {
+  color: #e2e8f0 !important;
+}
+
+/* Form Dark Override */
+.internal-page .ant-form-item-label > label {
+  color: #94a3b8 !important;
+}
+
+/* Menu Dark Override */
+.internal-page .ant-menu {
+  background: #0f172a !important;
+  border-right: 1px solid #1e293b !important;
+}
+
+.internal-page .ant-menu-item {
+  color: #94a3b8 !important;
+}
+
+.internal-page .ant-menu-item:hover {
+  color: #06b6d4 !important;
+  background: #1e293b !important;
+}
+
+.internal-page .ant-menu-item-selected {
+  color: #06b6d4 !important;
+  background: #1e293b !important;
+  border-left: 3px solid #06b6d4 !important;
+}
+
+/* List Dark Override */
+.internal-page .ant-list {
+  background: #0f172a !important;
+}
+
+.internal-page .ant-list-item {
+  border-bottom: 1px solid #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-list-item:hover {
+  background: #1e293b !important;
+}
+
+/* Collapse Dark Override */
+.internal-page .ant-collapse {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.internal-page .ant-collapse-header {
+  color: #f8fafc !important;
+  background: #1e293b !important;
+}
+
+.internal-page .ant-collapse-content {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.internal-page .ant-collapse-content-box {
+  color: #e2e8f0 !important;
+}
+
+/* Timeline Dark Override */
+.internal-page .ant-timeline-item-head {
+  background: #0f172a !important;
+  border-color: #06b6d4 !important;
+}
+
+.internal-page .ant-timeline-item-content {
+  color: #e2e8f0 !important;
+}
+
+/* Steps Dark Override */
+.internal-page .ant-steps-item-title {
+  color: #94a3b8 !important;
+}
+
+.internal-page .ant-steps-item-process .ant-steps-item-title {
+  color: #f8fafc !important;
+}
+
+.internal-page .ant-steps-item-finish .ant-steps-item-title {
+  color: #06b6d4 !important;
+}
+
+/* DatePicker Dark Override */
+.internal-page .ant-picker {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-picker-input > input {
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-picker-suffix {
+  color: #64748b !important;
+}
+
+/* Tree Dark Override */
+.internal-page .ant-tree {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-tree-node-content-wrapper:hover {
+  background: #1e293b !important;
+}
+
+.internal-page .ant-tree-node-selected {
+  background: rgba(6, 182, 212, 0.2) !important;
+  color: #06b6d4 !important;
+}
+
+/* Transfer Dark Override */
+.internal-page .ant-transfer-list {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.internal-page .ant-transfer-list-header {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.internal-page .ant-transfer-list-body {
+  background: #0f172a !important;
+}
+
+.internal-page .ant-transfer-list-content-item {
+  color: #e2e8f0 !important;
+}
+
+.internal-page .ant-transfer-list-content-item:hover {
+  background: #1e293b !important;
+}

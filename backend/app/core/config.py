@@ -1,41 +1,94 @@
 import os
+import secrets
 from typing import Optional
-from pydantic_settings import BaseSettings
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore",
+    )
     
     # App
     APP_NAME: str = "Threat Intelligence Platform"
     APP_VERSION: str = "0.1.0"
-    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    ENV: str = Field(default="dev", description="Environment name (dev/staging/prod)")
+    DEBUG: bool = Field(default=False, description="Enable debug/development mode")
     
-    # Database - Defaults for development, override in production
-    DATABASE_URL: str = "postgresql://app_user:app_pass@postgres:5432/app_db"
+    # Database
+    DATABASE_URL: Optional[str] = Field(default=None, description="SQLAlchemy database URL")
     
-    # Redis - Defaults for development
-    REDIS_URL: str = "redis://redis:6379/0"
+    # Redis
+    REDIS_URL: str = Field(default="redis://redis:6379/0")
     
-    # Security - Development default, MUST be changed in production
-    SECRET_KEY: str = "dev-secret-key-change-in-production-minimum-32-chars"
+    # Security
+    SECRET_KEY: Optional[str] = Field(default=None, description="JWT signing secret (required in prod)")
+    CONFIG_ENCRYPTION_KEY: Optional[str] = Field(
+        default=None,
+        description="Fernet key for encrypting stored configuration secrets (recommended).",
+    )
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 24  # Back to 24 hours for development convenience
     REFRESH_TOKEN_EXPIRATION_DAYS: int = 7
     OTP_EXPIRATION_SECONDS: int = 300
+
+    # Reverse proxy / client IP handling
+    TRUST_PROXY_HEADERS: bool = False
+    TRUSTED_PROXY_HOSTS: str = "127.0.0.1,::1"
+
+    # Setup endpoints (bootstrap)
+    SETUP_TOKEN: Optional[str] = None
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Validate critical security settings in production only
-        if not self.DEBUG:  # Production mode
+
+        # Normalize environment
+        env_lower = (self.ENV or "dev").strip().lower()
+        self.ENV = env_lower
+
+        # Ensure SECRET_KEY exists
+        if not self.SECRET_KEY:
+            if self.DEBUG or self.ENV != "prod":
+                # Persist a dev secret across restarts to avoid breaking local JWTs/encrypted configs.
+                try:
+                    dev_dir = os.path.abspath("./data")
+                    os.makedirs(dev_dir, exist_ok=True)
+                    dev_key_path = os.path.join(dev_dir, ".dev_secret_key")
+                    if os.path.exists(dev_key_path):
+                        with open(dev_key_path, "r", encoding="utf-8") as f:
+                            saved = f.read().strip()
+                            if saved:
+                                self.SECRET_KEY = saved
+                    if not self.SECRET_KEY:
+                        self.SECRET_KEY = secrets.token_urlsafe(64)
+                        with open(dev_key_path, "w", encoding="utf-8") as f:
+                            f.write(self.SECRET_KEY)
+                except Exception:
+                    self.SECRET_KEY = secrets.token_urlsafe(64)
+            else:
+                raise ValueError("SECRET_KEY is required in production")
+
+        # Validate critical security settings in production mode
+        if self.ENV == "prod" or (not self.DEBUG and self.ENV not in ("dev", "test")):
             if len(self.SECRET_KEY) < 32:
                 raise ValueError("SECRET_KEY must be at least 32 characters long in production")
-            if "dev-secret-key" in self.SECRET_KEY.lower() or "change-me" in self.SECRET_KEY.lower():
-                raise ValueError("SECRET_KEY must be changed from default value in production")
-        else:  # Development mode - just warn
-            if "dev-secret-key" in self.SECRET_KEY.lower():
-                import warnings
-                warnings.warn("Using default SECRET_KEY - DO NOT use in production!", UserWarning)
+            lowered = self.SECRET_KEY.lower()
+            if "dev-secret-key" in lowered or "change-me" in lowered:
+                raise ValueError("SECRET_KEY must be changed from default/placeholder value in production")
+
+        # Ensure DATABASE_URL exists
+        if not self.DATABASE_URL:
+            if self.DEBUG or self.ENV != "prod":
+                # Safe local default without embedded shared credentials.
+                self.DATABASE_URL = "sqlite:///./data/dev.db"
+            else:
+                raise ValueError("DATABASE_URL is required in production")
     
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000"
@@ -57,7 +110,10 @@ class Settings(BaseSettings):
     # Ingestion
     FEED_CHECK_INTERVAL_MINUTES: int = 30
     FEED_TIMEOUT_SECONDS: int = 30
-    SSRF_ALLOWLIST_DOMAINS: str = "feeds.reuters.com,feeds.bloomberg.com"
+    SSRF_ALLOWLIST_DOMAINS: str = ""
+    SSRF_ENFORCE_ALLOWLIST: Optional[bool] = None
+    SSRF_ALLOWED_PORTS: str = "80,443"
+    SSRF_ALLOW_PRIVATE_IPS: bool = False
     
     # GenAI - Multi-provider support
     GENAI_PROVIDER: str = "ollama"  # ollama, openai, anthropic, gemini
@@ -76,6 +132,9 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://host.docker.internal:11434"  # Docker-friendly default
     OLLAMA_MODEL: str = "llama3:latest"  # Available on user's machine
     PROMPT_TEMPLATE_VERSION: str = "v1"
+
+    # Automation
+    ENABLE_AUTOMATION_SCHEDULER: bool = False
     
     # Hunt Connectors - XSIAM (Cortex XDR)
     XSIAM_TENANT_ID: Optional[str] = None
@@ -142,9 +201,4 @@ class Settings(BaseSettings):
     # Data storage
     DATA_DIR: str = "./data"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-
-
 settings = Settings()

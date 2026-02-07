@@ -285,9 +285,17 @@ async def saml_acs(request: Request, db: Session = Depends(get_db)):
         logger.info("saml_login_success", user_id=user.id, nameid=nameid)
         
         # Redirect to frontend with tokens
-        # The frontend will extract tokens from URL hash and store them
+        # SECURITY: Put tokens in the URL fragment (not query params) to avoid leaking
+        # them via server logs, referrers, proxies, and browser history sync.
         frontend_url = settings.CORS_ORIGINS.split(",")[0].strip()
-        redirect_url = f"{frontend_url}/login?access_token={access_token}&refresh_token={refresh_token}&saml=true"
+        fragment = urlencode(
+            {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "saml": "true",
+            }
+        )
+        redirect_url = f"{frontend_url}/login#{fragment}"
         
         return RedirectResponse(url=redirect_url, status_code=302)
         
@@ -297,7 +305,7 @@ async def saml_acs(request: Request, db: Session = Depends(get_db)):
         logger.error("saml_acs_error", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"SAML authentication failed: {str(e)}"
+            detail="SAML authentication failed"
         )
 
 
@@ -332,7 +340,7 @@ async def saml_metadata():
         logger.error("saml_metadata_error", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate metadata: {str(e)}"
+            detail="Failed to generate metadata"
         )
 
 

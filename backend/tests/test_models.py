@@ -1,8 +1,3 @@
-import sys
-import os
-# Ensure app package is importable when running in container
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
 import pytest
 from datetime import datetime
 from app.core.database import SessionLocal

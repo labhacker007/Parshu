@@ -76,12 +76,16 @@ async def get_current_user(
     """
     try:
         payload = decode_token(credentials.credentials)
-        user_id: int = payload.get("sub")
-        if user_id is None:
+        user_id_raw = payload.get("sub")
+        if user_id_raw is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        try:
+            user_id = int(user_id_raw)
+        except Exception:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     except ValueError as e:
         logger.error("token_decode_failed", error=str(e))
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.is_active:
@@ -90,13 +94,24 @@ async def get_current_user(
     # Check for role impersonation
     is_impersonating = payload.get("is_impersonating", False)
     if is_impersonating:
+        # Defense-in-depth: only actual ADMIN users may impersonate roles
+        from app.models import UserRole
+        if user.role != UserRole.ADMIN:
+            logger.warning("impersonation_claim_rejected_non_admin", user_id=user.id, username=user.username)
+            return user
+
         assumed_role_str = payload.get("role")
         impersonator_username = payload.get("impersonator_username")
         
-        try:
-            assumed_role = UserRole[assumed_role_str] if assumed_role_str else None
-        except KeyError:
-            assumed_role = None
+        assumed_role = None
+        if assumed_role_str:
+            try:
+                assumed_role = UserRole[assumed_role_str]
+            except Exception:
+                try:
+                    assumed_role = UserRole(assumed_role_str)
+                except Exception:
+                    assumed_role = None
         
         if assumed_role:
             # Attach impersonation context to the user object
@@ -147,8 +162,6 @@ def require_permission(required_permission: str):
     3. Primary role permissions
     """
     async def permission_check(user: User = Depends(get_current_user)):
-        from app.auth.unified_permissions import has_api_permission
-        
         # Check custom permissions first (highest priority)
         custom_perms = getattr(user, 'custom_permissions', None) or {}
         
@@ -178,15 +191,19 @@ def require_permission(required_permission: str):
         
         effective_role = get_effective_role(user)
         role_name = effective_role.value if hasattr(effective_role, 'value') else str(effective_role)
-        
-        # Check primary role
-        if has_api_permission(role_name, required_permission):
+
+        # Single source-of-truth: role->permission mapping in app.auth.rbac
+        if has_permission(effective_role, required_permission):
             return user
-        
-        # Check additional roles
+
+        # Check additional roles (multi-role support)
         additional_roles = getattr(user, 'additional_roles', []) or []
         for add_role in additional_roles:
-            if has_api_permission(add_role, required_permission):
+            try:
+                add_role_enum = UserRole(add_role)
+            except Exception:
+                continue
+            if has_permission(add_role_enum, required_permission):
                 logger.debug(
                     "permission_granted_via_additional_role",
                     user_id=user.id,
@@ -194,10 +211,6 @@ def require_permission(required_permission: str):
                     additional_role=add_role
                 )
                 return user
-        
-        # Fallback: check legacy has_permission
-        if has_permission(effective_role, required_permission):
-            return user
         
         # Permission denied
         role_display = role_name

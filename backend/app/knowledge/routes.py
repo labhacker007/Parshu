@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.logging import logger
 from app.auth.dependencies import get_current_user, require_permission
-from app.auth.rbac import Permission
+from app.auth.rbac import Permission, has_permission
 from app.models import (
     User, KnowledgeDocument, KnowledgeDocumentType, 
     KnowledgeDocumentStatus, AuditEventType
@@ -31,6 +31,19 @@ from app.audit.manager import AuditManager
 
 
 router = APIRouter(prefix="/knowledge", tags=["Knowledge Base"])
+MANAGE_KNOWLEDGE = Permission.MANAGE_KNOWLEDGE.value
+
+
+def _safe_filename(filename: str) -> str:
+    name = (Path(filename).name or "upload").strip()
+    safe_chars = []
+    for ch in name:
+        if ch.isalnum() or ch in (".", "-", "_", " "):
+            safe_chars.append(ch)
+        else:
+            safe_chars.append("_")
+    sanitized = "".join(safe_chars).strip().replace(" ", "_")
+    return sanitized or "upload"
 
 
 # ============================================================================
@@ -161,7 +174,7 @@ async def upload_document_file(
     tags: Optional[str] = Form(None),  # JSON array string
     priority: int = Form(5),
     auto_process: bool = Form(True),
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -191,8 +204,20 @@ async def upload_document_file(
         )
     
     # Save file
-    file_id = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
+    safe_name = _safe_filename(file.filename)
+    file_id = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
     file_path = KNOWLEDGE_STORAGE_PATH / file_id
+
+    # Defense-in-depth: ensure the resolved path stays under the intended storage directory.
+    try:
+        base = KNOWLEDGE_STORAGE_PATH.resolve()
+        resolved = file_path.resolve()
+        if not resolved.is_relative_to(base):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename")
     
     with open(file_path, 'wb') as f:
         f.write(contents)
@@ -234,7 +259,7 @@ async def upload_document_file(
     
     # Process in background if requested
     if auto_process:
-        background_tasks.add_task(process_document_task, doc.id, db)
+        background_tasks.add_task(process_document_task, doc.id)
     
     # Audit log
     AuditManager.log_event(
@@ -253,7 +278,7 @@ async def upload_document_file(
 async def upload_document_url(
     background_tasks: BackgroundTasks,
     request: DocumentUploadRequest,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -290,12 +315,11 @@ async def upload_document_url(
             doc.id, 
             str(request.source_url),
             request.crawl_depth,
-            request.max_pages,
-            db
+            request.max_pages
         )
     else:
         # Just process the single URL
-        background_tasks.add_task(process_document_task, doc.id, db)
+        background_tasks.add_task(process_document_task, doc.id)
     
     # Audit log
     AuditManager.log_event(
@@ -310,13 +334,24 @@ async def upload_document_url(
     return _doc_to_response(doc)
 
 
-async def process_document_task(doc_id: int, db: Session):
-    """Background task to process a document."""
+async def process_document_task(doc_id: int):
+    """Background task to process a document.
+
+    NOTE: Background tasks must not reuse the request-scoped DB session.
+    """
+    from app.core.database import SessionLocal
+
+    db = SessionLocal()
     try:
         service = KnowledgeService(db)
         await service.process_document(doc_id)
     except Exception as e:
         logger.error("background_document_processing_failed", doc_id=doc_id, error=str(e))
+    finally:
+        try:
+            db.close()
+        except Exception:
+            pass
 
 
 async def crawl_and_process_task(
@@ -324,11 +359,13 @@ async def crawl_and_process_task(
     start_url: str, 
     depth: int, 
     max_pages: int,
-    db: Session
 ):
     """Background task to crawl a website and process all pages."""
     from app.knowledge.crawler import crawl_url
-    
+    from app.core.database import SessionLocal
+
+    db = SessionLocal()
+     
     try:
         # Update status to CRAWLING
         doc = db.query(KnowledgeDocument).filter(KnowledgeDocument.id == doc_id).first()
@@ -380,12 +417,17 @@ Depth: {page['depth']}
             doc.status = KnowledgeDocumentStatus.FAILED
             doc.processing_error = str(e)
             db.commit()
+    finally:
+        try:
+            db.close()
+        except Exception:
+            pass
 
 
 @router.post("/{doc_id}/process", response_model=DocumentResponse, summary="Trigger document processing")
 async def process_document(
     doc_id: int,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """Manually trigger processing for a document."""
@@ -397,7 +439,8 @@ async def process_document(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        logger.error("process_document_failed", doc_id=doc_id, error=str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to process document")
 
 
 @router.get("/", response_model=List[DocumentResponse], summary="List knowledge documents")
@@ -406,7 +449,7 @@ async def list_documents(
     status_filter: Optional[str] = None,
     is_active: Optional[bool] = None,
     limit: int = 100,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """List all documents in the knowledge base."""
@@ -439,7 +482,7 @@ async def list_documents(
 
 @router.get("/stats", summary="Get knowledge base statistics")
 async def get_knowledge_stats(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """Get statistics about the knowledge base."""
@@ -485,6 +528,17 @@ async def get_document(
     doc = db.query(KnowledgeDocument).filter(KnowledgeDocument.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    # Authorization:
+    # - Admin-managed (global) docs require manage_knowledge
+    # - User docs require ownership
+    from app.auth.dependencies import get_effective_role
+    if doc.is_admin_managed:
+        if not has_permission(get_effective_role(current_user), MANAGE_KNOWLEDGE):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+    else:
+        if doc.uploaded_by_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
     
     return _doc_to_response(doc)
 
@@ -501,6 +555,14 @@ async def get_document_content(
     doc = db.query(KnowledgeDocument).filter(KnowledgeDocument.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    from app.auth.dependencies import get_effective_role
+    if doc.is_admin_managed:
+        if not has_permission(get_effective_role(current_user), MANAGE_KNOWLEDGE):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+    else:
+        if doc.uploaded_by_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
     
     chunks = db.query(KnowledgeChunk).filter(
         KnowledgeChunk.document_id == doc_id
@@ -542,7 +604,7 @@ async def get_all_chunks(
     page_size: int = 50,
     document_id: Optional[int] = None,
     search: Optional[str] = None,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """Get all chunks for admin viewing. Supports filtering and pagination."""
@@ -587,7 +649,7 @@ async def get_all_chunks(
 @router.delete("/chunks/{chunk_id}", summary="Delete a specific chunk (admin only)")
 async def delete_chunk(
     chunk_id: int,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """Delete a specific chunk. Updates the document's chunk count."""
@@ -624,7 +686,7 @@ async def delete_chunk(
 async def update_document(
     doc_id: int,
     request: DocumentUpdateRequest,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """Update document metadata.
@@ -670,7 +732,7 @@ async def update_document(
 @router.delete("/{doc_id}", summary="Delete a document")
 def delete_document(
     doc_id: int,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """Delete a document from the knowledge base.
@@ -735,7 +797,7 @@ def delete_document(
         logger.error("failed_to_delete_document", doc_id=doc_id, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail=f"Failed to delete document: {str(e)}"
+            detail="Failed to delete document"
         )
 
 
@@ -743,7 +805,7 @@ def delete_document(
 async def crawl_website(
     background_tasks: BackgroundTasks,
     request: CrawlRequest,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -782,8 +844,7 @@ async def crawl_website(
         doc.id,
         str(request.url),
         request.depth,
-        request.max_pages,
-        db
+        request.max_pages
     )
     
     # Audit log
@@ -844,11 +905,10 @@ async def add_user_url(
             doc.id, 
             str(request.source_url),
             request.crawl_depth,
-            request.max_pages,
-            db
+            request.max_pages
         )
     else:
-        background_tasks.add_task(process_document_task, doc.id, db)
+        background_tasks.add_task(process_document_task, doc.id)
     
     return {
         "message": f"URL added to your personal knowledge base",
@@ -898,7 +958,7 @@ async def delete_user_document(
 @router.post("/search", response_model=List[SearchResultResponse], summary="Search knowledge base")
 async def search_knowledge(
     request: SearchRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """Search the knowledge base for relevant content."""
@@ -912,6 +972,29 @@ async def search_knowledge(
         top_k=request.top_k
     )
     
+    return [SearchResultResponse(**r) for r in results]
+
+
+@router.post("/user/search", response_model=List[SearchResultResponse], summary="Search user's personal knowledge base")
+async def search_user_knowledge(
+    request: SearchRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Search only the authenticated user's personal documents."""
+    service = KnowledgeService(db)
+
+    results = await service.search(
+        query=request.query,
+        target_function=request.target_function,
+        target_platform=request.target_platform,
+        doc_type=request.doc_type,
+        top_k=request.top_k,
+        uploaded_by_id=current_user.id,
+        include_admin_managed=False,
+        include_user_managed=True,
+    )
+
     return [SearchResultResponse(**r) for r in results]
 
 
@@ -939,7 +1022,7 @@ class RAGScheduleRequest(BaseModel):
 @router.post("/test", summary="Test RAG retrieval and generation")
 async def test_rag(
     request: RAGTestRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -1035,18 +1118,18 @@ Please answer the question based on the context provided above."""
     except Exception as e:
         logger.error("rag_test_generation_failed", error=str(e))
         return {
-            "answer": f"RAG retrieval succeeded but generation failed: {str(e)}",
+            "answer": "RAG retrieval succeeded but generation failed",
             "sources": sources,
             "context_used": context,
             "model_used": None,
             "success": False,
-            "error": str(e)
+            "error": "generation_failed"
         }
 
 
 @router.get("/workflow/status", summary="Get RAG workflow status")
 async def get_rag_workflow_status(
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -1107,7 +1190,7 @@ async def get_rag_workflow_status(
 @router.post("/workflow/trigger", summary="Manually trigger RAG processing")
 async def trigger_rag_workflow(
     action: str,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -1352,7 +1435,7 @@ class GitHubCrawlRequest(BaseModel):
 async def crawl_github_repo(
     request: GitHubCrawlRequest,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -1475,7 +1558,7 @@ async def create_self_documentation(
     include_code: bool = True,
     include_docs: bool = True,
     max_files: int = 200,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(MANAGE_KNOWLEDGE)),
     db: Session = Depends(get_db)
 ):
     """

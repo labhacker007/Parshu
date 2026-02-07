@@ -1,21 +1,23 @@
+import os
 import time
-import requests
 from app.core.database import SessionLocal
 from app.models import FeedSource, Article, Hunt
 
-BASE = "http://localhost:8000"
-
-
-def login_admin():
-    r = requests.post(f"{BASE}/auth/login", json={"email": "admin@orion.local", "password": "Admin@123"})
+def login_admin(client):
+    r = client.post("/auth/login", json={"email": os.environ["ADMIN_EMAIL"], "password": os.environ["ADMIN_PASSWORD"]})
     assert r.status_code == 200
-    data = r.json()
-    return data['access_token']
+    return r.json()["access_token"]
 
 
-def test_hunt_execute_and_completion():
-    token = login_admin()
+def test_hunt_execute_and_completion(monkeypatch, client):
+    token = login_admin(client)
     headers = {"Authorization": f"Bearer {token}"}
+
+    class DummyConnector:
+        async def execute_query(self, query: str):
+            return {"status": "completed", "platform": "xsiam", "results_count": 0, "results": []}
+
+    monkeypatch.setattr("app.hunts.routes.get_connector", lambda platform: DummyConnector())
 
     # Create feed source, article, hunt directly in DB
     db = SessionLocal()
@@ -53,29 +55,25 @@ def test_hunt_execute_and_completion():
         db.close()
 
     # Trigger execution via API
-    r = requests.post(f"{BASE}/hunts/{hunt.id}/execute", headers=headers)
+    r = client.post(f"/hunts/{hunt.id}/execute", headers=headers)
     assert r.status_code == 200
 
     # Poll executions until COMPLETED or timeout
-    timeout = 10
+    timeout = 5
     deadline = time.time() + timeout
     executions = []
     while time.time() < deadline:
-        r2 = requests.get(f"{BASE}/hunts/{hunt.id}/executions", headers=headers)
+        r2 = client.get(f"/hunts/{hunt.id}/executions", headers=headers)
         assert r2.status_code == 200
         executions = r2.json()
-        if executions and executions[0]['status'] == 'COMPLETED':
+        if executions and executions[0]["status"] in ("COMPLETED", "FAILED"):
             break
-        time.sleep(0.5)
+        time.sleep(0.1)
 
     assert executions, "No executions found for hunt"
     ex = executions[0]
-    assert ex['status'] == 'COMPLETED'
+    assert ex["status"] == "COMPLETED"
     assert ex['results'] is not None
     status = ex['results'].get('status')
-    if status == 'completed':
-        assert ex['results'].get('platform') == 'xsiam'
-    else:
-        # If credentials are not configured in the environment, ensure we recorded an error
-        assert status == 'error'
-        assert 'credentials not configured' in ex['results'].get('message', '').lower()
+    assert status == "completed"
+    assert ex["results"].get("platform") == "xsiam"

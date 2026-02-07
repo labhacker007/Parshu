@@ -315,24 +315,78 @@ function NavBar() {
     return colors[role] || currentTheme.colors.textMuted;
   };
 
-  // Theme selector menu for admins
-  const themeMenuItems = themes.map(t => ({
-    key: t.id,
-    label: (
-      <Space>
-        <div style={{
-          width: 16,
-          height: 16,
-          borderRadius: 4,
-          background: t.colors.primary,
-          border: `2px solid ${t.id === currentTheme.id ? currentTheme.colors.primary : 'transparent'}`,
-        }} />
-        <span>{t.name}</span>
-        {t.mode === 'dark' && <Tag style={{ fontSize: 10 }}>Dark</Tag>}
-      </Space>
-    ),
-    onClick: () => setTheme(t.id),
-  }));
+  // Theme selector menu for all users - grouped by category
+  const themeMenuItems = [
+    // Professional themes
+    {
+      key: 'professional-header',
+      label: <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Professional</span>,
+      disabled: true,
+    },
+    ...themes.filter(t => t.category === 'professional').map(t => ({
+      key: t.id,
+      label: (
+        <Space>
+          <div style={{
+            width: 16,
+            height: 16,
+            borderRadius: 4,
+            background: t.colors.primary,
+            border: `2px solid ${t.id === currentTheme.id ? currentTheme.colors.primary : 'transparent'}`,
+          }} />
+          <span style={{ fontWeight: t.id === currentTheme.id ? 600 : 400 }}>{t.name}</span>
+          {t.id === currentTheme.id && <CheckCircleOutlined style={{ color: 'var(--primary)', fontSize: 12 }} />}
+        </Space>
+      ),
+      onClick: () => setTheme(t.id),
+    })),
+    // Cyber themes
+    {
+      key: 'cyber-header',
+      label: <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cyber Security</span>,
+      disabled: true,
+    },
+    ...themes.filter(t => t.category === 'cyber').map(t => ({
+      key: t.id,
+      label: (
+        <Space>
+          <div style={{
+            width: 16,
+            height: 16,
+            borderRadius: 4,
+            background: t.colors.primary,
+            border: `2px solid ${t.id === currentTheme.id ? currentTheme.colors.primary : 'transparent'}`,
+          }} />
+          <span style={{ fontWeight: t.id === currentTheme.id ? 600 : 400 }}>{t.name}</span>
+          {t.id === currentTheme.id && <CheckCircleOutlined style={{ color: 'var(--primary)', fontSize: 12 }} />}
+        </Space>
+      ),
+      onClick: () => setTheme(t.id),
+    })),
+    // Premium themes
+    {
+      key: 'premium-header',
+      label: <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Premium</span>,
+      disabled: true,
+    },
+    ...themes.filter(t => t.category === 'premium').map(t => ({
+      key: t.id,
+      label: (
+        <Space>
+          <div style={{
+            width: 16,
+            height: 16,
+            borderRadius: 4,
+            background: t.colors.primary,
+            border: `2px solid ${t.id === currentTheme.id ? currentTheme.colors.primary : 'transparent'}`,
+          }} />
+          <span style={{ fontWeight: t.id === currentTheme.id ? 600 : 400 }}>{t.name}</span>
+          {t.id === currentTheme.id && <CheckCircleOutlined style={{ color: 'var(--primary)', fontSize: 12 }} />}
+        </Space>
+      ),
+      onClick: () => setTheme(t.id),
+    })),
+  ];
 
   // Timezone options for profile menu
   const timezoneMenuItems = [
@@ -471,14 +525,28 @@ function NavBar() {
       onClick: handleRestoreRole,
       disabled: switchingRole,
     }] : []),
-    // Theme selector - always available to actual admins even when impersonating
-    ...(isActuallyAdmin ? [{
+    // Theme selector - available to all users
+    {
       key: 'theme',
       label: 'Change Theme',
       icon: <BgColorsOutlined />,
-      children: themeMenuItems,
-    }] : []),
-    ...(isAdmin || isImpersonating ? [{ type: 'divider' }] : []),
+      children: [
+        // Link to full theme manager
+        {
+          key: 'theme-manager',
+          label: (
+            <Space>
+              <SettingOutlined />
+              <span>Theme Settings...</span>
+            </Space>
+          ),
+          onClick: () => navigate('/admin?tab=appearance'),
+        },
+        { type: 'divider' },
+        ...themeMenuItems,
+      ],
+    },
+    { type: 'divider' },
     // Security settings - available to all users
     {
       key: 'security',

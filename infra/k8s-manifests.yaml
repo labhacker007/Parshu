@@ -1,37 +1,46 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: orion-config
-  namespace: orion
+  name: parshu-config
+  namespace: parshu
 data:
-  DATABASE_URL: postgresql://orion_user:orion_pass@postgres:5432/orion_db
-  REDIS_URL: redis://redis:6379/0
   LOG_LEVEL: "INFO"
-  CORS_ORIGINS: "http://localhost:3000,https://orion.example.com"
+  CORS_ORIGINS: "http://localhost:3000"
   JWT_ALGORITHM: "HS256"
   JWT_EXPIRATION_HOURS: "24"
   FEED_CHECK_INTERVAL_MINUTES: "30"
+  REDIS_URL: "redis://redis:6379/0"
+  ENV: "prod"
+  DATA_DIR: "/tmp/data"
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: orion-secrets
-  namespace: orion
+  name: parshu-secrets
+  namespace: parshu
 type: Opaque
 stringData:
-  SECRET_KEY: "change-me-in-production"
-  OPENAI_API_KEY: ""
-  XSIAM_API_KEY: ""
-  DEFENDER_CLIENT_SECRET: ""
-  WIZ_CLIENT_SECRET: ""
-  SMTP_PASSWORD: ""
-  SLACK_BOT_TOKEN: ""
+  # Required: set real values via your secret manager or `kubectl create secret ...`
+  SECRET_KEY: ""
+  DATABASE_URL: ""
+  POSTGRES_PASSWORD: ""
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: parshu
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: orion
+  namespace: parshu
 spec:
   replicas: 1
   selector:
@@ -42,46 +51,55 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-      - name: postgres
-        image: postgres:15-alpine
-        ports:
-        - containerPort: 5432
-        env:
-        - name: POSTGRES_USER
-          value: orion_user
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: orion-secrets
-              key: SECRET_KEY
-        - name: POSTGRES_DB
-          value: orion_db
-        volumeMounts:
-        - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: parshu_user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: parshu-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              value: parshu_db
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
       volumes:
-      - name: postgres-storage
-        emptyDir: {}
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: orion
+  namespace: parshu
 spec:
   selector:
     app: postgres
   ports:
-  - port: 5432
-    targetPort: 5432
-  clusterIP: None
+    - port: 5432
+      targetPort: 5432
+  type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: orion
+  namespace: parshu
 spec:
   replicas: 1
   selector:
@@ -92,30 +110,38 @@ spec:
       labels:
         app: redis
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-      - name: redis
-        image: redis:7-alpine
-        ports:
-        - containerPort: 6379
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: redis
-  namespace: orion
+  namespace: parshu
 spec:
   selector:
     app: redis
   ports:
-  - port: 6379
-    targetPort: 6379
-  clusterIP: None
+    - port: 6379
+      targetPort: 6379
+  type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
-  namespace: orion
+  namespace: parshu
 spec:
   replicas: 2
   selector:
@@ -126,55 +152,71 @@ spec:
       labels:
         app: backend
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-      - name: backend
-        image: orion-backend:latest
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8000
-        envFrom:
-        - configMapRef:
-            name: orion-config
-        - secretRef:
-            name: orion-secrets
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 5
+        - name: backend
+          image: parshu-backend:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: parshu-config
+            - secretRef:
+                name: parshu-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: backend
-  namespace: orion
+  namespace: parshu
 spec:
   selector:
     app: backend
   ports:
-  - port: 8000
-    targetPort: 8000
-  type: LoadBalancer
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: orion
+  namespace: parshu
 spec:
   replicas: 2
   selector:
@@ -185,38 +227,100 @@ spec:
       labels:
         app: frontend
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-      - name: frontend
-        image: orion-frontend:latest
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 3000
-        env:
-        - name: REACT_APP_API_URL
-          value: "http://backend:8000"
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
+        - name: frontend
+          image: parshu-frontend:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: REACT_APP_API_URL
+              value: "http://backend:8000"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend
-  namespace: orion
+  namespace: parshu
 spec:
   selector:
     app: frontend
   ports:
-  - port: 3000
-    targetPort: 3000
-  type: LoadBalancer
+    - port: 3000
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: parshu
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-backend
+  namespace: parshu
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - protocol: TCP
+          port: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-data-stores
+  namespace: parshu
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379

@@ -185,16 +185,10 @@ def get_report(
 def update_report(
     report_id: int,
     request: ReportUpdateRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.EDIT_REPORTS.value)),
     db: Session = Depends(get_db)
 ):
-    """Update a draft report. Only ADMIN and TI roles can edit reports."""
-    # Permission check: Only ADMIN and TI can edit reports
-    if current_user.role not in ["ADMIN", "TI"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Intel Analysts and Admins can edit reports"
-        )
+    """Update a draft report."""
     
     report = db.query(Report).filter(Report.id == report_id).first()
     if not report:
@@ -242,16 +236,10 @@ def update_report(
 def publish_report(
     report_id: int,
     request: ReportPublishRequest = ReportPublishRequest(),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.PUBLISH_REPORTS.value)),
     db: Session = Depends(get_db)
 ):
-    """Publish a report, making it final and ready for viewing/download. Only ADMIN and TI roles can publish."""
-    # Permission check: Only ADMIN and TI can publish reports
-    if current_user.role not in ["ADMIN", "TI"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Intel Analysts and Admins can publish reports"
-        )
+    """Publish a report, making it final and ready for viewing/download."""
     
     report = db.query(Report).filter(Report.id == report_id).first()
     if not report:
@@ -293,10 +281,10 @@ def publish_report(
 @router.post("/{report_id}/unpublish", response_model=ReportResponse)
 def unpublish_report(
     report_id: int,
-    current_user: User = Depends(require_permission(Permission.MANAGE_USERS.value)),
+    current_user: User = Depends(require_permission(Permission.PUBLISH_REPORTS.value)),
     db: Session = Depends(get_db)
 ):
-    """Unpublish a report back to DRAFT status. Admin only."""
+    """Unpublish a report back to DRAFT status."""
     report = db.query(Report).filter(Report.id == report_id).first()
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
@@ -834,6 +822,22 @@ def export_report_csv(
     report = db.query(Report).filter(Report.id == report_id).first()
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
+    def _csv_safe(value):
+        """
+        Prevent CSV/Excel formula injection by prefixing dangerous leading characters.
+        See: OWASP CSV Injection (formula injection).
+        """
+        if value is None:
+            return ""
+        if isinstance(value, (int, float, bool)):
+            return value
+        s = str(value)
+        if not s:
+            return s
+        if s.lstrip().startswith(("=", "+", "-", "@")):
+            return "'" + s
+        return s
     
     # Fetch articles
     articles = db.query(Article).filter(Article.id.in_(report.article_ids)).all()
@@ -864,9 +868,9 @@ def export_report_csv(
         # If no intelligence, still write article info
         if not intelligence and not hunts:
             writer.writerow([
-                report.title, report.report_type, report.generated_at.isoformat(),
-                article.id, article.title, article.status.value if article.status else "",
-                article.published_at.isoformat() if article.published_at else "", article.url,
+                _csv_safe(report.title), _csv_safe(report.report_type), report.generated_at.isoformat(),
+                article.id, _csv_safe(article.title), _csv_safe(article.status.value) if article.status else "",
+                article.published_at.isoformat() if article.published_at else "", _csv_safe(article.url),
                 "", "", "", "",
                 "", "", "", "",
                 "", ""
@@ -875,11 +879,11 @@ def export_report_csv(
         # Write intelligence rows
         for intel in intelligence:
             writer.writerow([
-                report.title, report.report_type, report.generated_at.isoformat(),
-                article.id, article.title, article.status.value if article.status else "",
-                article.published_at.isoformat() if article.published_at else "", article.url,
-                intel.intelligence_type.value if intel.intelligence_type else "",
-                intel.value, intel.confidence, intel.mitre_id or "",
+                _csv_safe(report.title), _csv_safe(report.report_type), report.generated_at.isoformat(),
+                article.id, _csv_safe(article.title), _csv_safe(article.status.value) if article.status else "",
+                article.published_at.isoformat() if article.published_at else "", _csv_safe(article.url),
+                _csv_safe(intel.intelligence_type.value) if intel.intelligence_type else "",
+                _csv_safe(intel.value), intel.confidence, _csv_safe(intel.mitre_id or ""),
                 "", "", "", "",
                 "", ""
             ])
@@ -889,15 +893,15 @@ def export_report_csv(
             for execution in hunt.executions:
                 analysis = execution.results.get("genai_analysis", {}) if execution.results else {}
                 writer.writerow([
-                    report.title, report.report_type, report.generated_at.isoformat(),
-                    article.id, article.title, article.status.value if article.status else "",
-                    article.published_at.isoformat() if article.published_at else "", article.url,
+                    _csv_safe(report.title), _csv_safe(report.report_type), report.generated_at.isoformat(),
+                    article.id, _csv_safe(article.title), _csv_safe(article.status.value) if article.status else "",
+                    article.published_at.isoformat() if article.published_at else "", _csv_safe(article.url),
                     "", "", "", "",
-                    hunt.platform, execution.status.value if execution.status else "",
+                    _csv_safe(hunt.platform), _csv_safe(execution.status.value) if execution.status else "",
                     execution.results.get("results_count", 0) if execution.results else 0,
                     execution.execution_time_ms or 0,
-                    analysis.get("risk_level", ""),
-                    (analysis.get("executive_summary", "") or "")[:200]
+                    _csv_safe(analysis.get("risk_level", "")),
+                    _csv_safe((analysis.get("executive_summary", "") or "")[:200])
                 ])
     
     output.seek(0)
@@ -1783,6 +1787,8 @@ def export_report_html(
     Compatible with Word, PDF printing, and direct viewing.
     """
     import re
+    import html
+    from urllib.parse import urlparse
     
     report = db.query(Report).filter(Report.id == report_id).first()
     if not report:
@@ -1808,6 +1814,56 @@ def export_report_html(
     confidentiality = branding.get('confidentiality_notice', 'CONFIDENTIAL - Internal Use Only')
     primary_color = branding.get('primary_color', '#1890ff')
     dark_color = branding.get('dark_color', '#1a1a2e')
+
+    def _sanitize_css_color(value: str, fallback: str) -> str:
+        v = (value or "").strip()
+        if re.match(r"^#[0-9a-fA-F]{3,8}$", v):
+            return v
+        if re.match(r"^(rgb|rgba|hsl|hsla)\\([0-9\\s,%.]+\\)$", v):
+            return v
+        return fallback
+
+    def _sanitize_href(url: str) -> str:
+        if not url:
+            return "#"
+        u = str(url).strip()
+        # Reject obviously unsafe characters that can lead to HTML/attribute injection
+        if re.search(r"[\x00-\x1f\x7f\s\"'<>]", u):
+            return "#"
+        try:
+            parsed = urlparse(u)
+        except Exception:
+            return "#"
+        if parsed.scheme in ("", "http", "https"):
+            return html.escape(u, quote=True)
+        return "#"
+
+    def _sanitize_img_src(url: str) -> str:
+        if not url:
+            return ""
+        u = str(url).strip()
+        if re.search(r"[\x00-\x1f\x7f\s\"'<>]", u):
+            return ""
+        try:
+            parsed = urlparse(u)
+        except Exception:
+            return ""
+        if parsed.scheme in ("http", "https"):
+            return html.escape(u, quote=True)
+        if parsed.scheme == "data" and u.lower().startswith("data:image/"):
+            return html.escape(u, quote=True)
+        return ""
+
+    safe_company_name = html.escape(str(company_name), quote=True)
+    safe_confidentiality = html.escape(str(confidentiality), quote=True)
+    safe_report_title = html.escape(str(report.title or "Report"), quote=True)
+    safe_company_logo_url = _sanitize_img_src(company_logo_url)
+    primary_color = _sanitize_css_color(primary_color, "#1890ff")
+    dark_color = _sanitize_css_color(dark_color, "#1a1a2e")
+
+    report_type_raw = str(getattr(report, "report_type", "") or "").strip().lower()
+    safe_report_type_class = report_type_raw if re.match(r"^[a-z0-9_-]{1,32}$", report_type_raw) else "executive"
+    safe_report_type_label = html.escape(report_type_raw.replace("_", " ").title() or "Executive", quote=False)
     
     # Process markdown-style content to HTML
     def process_content(text: str) -> str:
@@ -1837,7 +1893,7 @@ def export_report_html(
                 continue
             
             if in_code_block:
-                html_lines.append(line.replace('<', '&lt;').replace('>', '&gt;'))
+                html_lines.append(html.escape(line, quote=False))
                 continue
             
             # Horizontal rules
@@ -1925,19 +1981,60 @@ def export_report_html(
         return '\n'.join(html_lines)
     
     def process_inline(text: str) -> str:
-        """Process inline markdown formatting."""
-        text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-        # Bold
-        text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
-        text = re.sub(r'__([^_]+)__', r'<strong>\1</strong>', text)
-        # Italic
-        text = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', text)
-        text = re.sub(r'_([^_]+)_', r'<em>\1</em>', text)
-        # Code
-        text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
-        # Links
-        text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" target="_blank">\1</a>', text)
-        return text
+        """Process inline markdown formatting with safe escaping and URL sanitization."""
+        if not text:
+            return ""
+
+        link_tokens = {}
+        token_idx = 0
+
+        def _process_inline_without_links(raw: str) -> str:
+            escaped = html.escape(raw, quote=False)
+            escaped = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', escaped)
+            escaped = re.sub(r'__([^_]+)__', r'<strong>\1</strong>', escaped)
+            escaped = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', escaped)
+            escaped = re.sub(r'_([^_]+)_', r'<em>\1</em>', escaped)
+            escaped = re.sub(r'`([^`]+)`', r'<code>\1</code>', escaped)
+            return escaped
+
+        def _replace_link(match: re.Match) -> str:
+            nonlocal token_idx
+            label = match.group(1) or ""
+            url = match.group(2) or ""
+            # Use a token that won't be picked up by the simple emphasis regexes.
+            token = f"@@PARSHULINKTOKEN{token_idx}@@"
+            token_idx += 1
+            link_tokens[token] = (label, url)
+            return token
+
+        tokenized = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', _replace_link, text)
+        rendered = _process_inline_without_links(tokenized)
+
+        for token, (label, url) in link_tokens.items():
+            safe_label = _process_inline_without_links(label)
+            safe_href = _sanitize_href(url)
+            rendered = rendered.replace(
+                token,
+                f'<a href="{safe_href}" target="_blank" rel="noopener noreferrer">{safe_label}</a>',
+            )
+
+        return rendered
+
+    sources_html_parts = []
+    for a in articles:
+        title = html.escape(str(a.title or ""), quote=False)
+        href = _sanitize_href(getattr(a, "url", None) or "")
+        if href != "#" and href:
+            sources_html_parts.append(
+                f'<div class="source-item"><a href="{href}" target="_blank" rel="noopener noreferrer">{title}</a></div>'
+            )
+        else:
+            sources_html_parts.append(f"<div class=\"source-item\">{title}</div>")
+    sources_html = "".join(sources_html_parts)
+
+    company_logo_html = ""
+    if safe_company_logo_url:
+        company_logo_html = f'<img src="{safe_company_logo_url}" class="company-logo" alt="{safe_company_name}" />'
     
     # Build modern HTML document with branding
     html_content = f'''<!DOCTYPE html>
@@ -1945,7 +2042,7 @@ def export_report_html(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{report.title} - {company_name}</title>
+  <title>{safe_report_title} - {safe_company_name}</title>
   <style>
     :root {{
       --primary: {dark_color};
@@ -2213,13 +2310,13 @@ def export_report_html(
   </style>
 </head>
 <body>
-  <div class="classification-banner">{confidentiality}</div>
+  <div class="classification-banner">{safe_confidentiality}</div>
   
   <header class="header">
     <div class="header-inner">
       <div class="header-left">
-        {'<img src="' + company_logo_url + '" class="company-logo" alt="' + company_name + '" />' if company_logo_url else ''}
-        <div class="company-name">{company_name}</div>
+        {company_logo_html}
+        <div class="company-name">{safe_company_name}</div>
       </div>
       <div class="header-right">
         <div class="header-date">{report.generated_at.strftime('%B %d, %Y')}</div>
@@ -2230,12 +2327,12 @@ def export_report_html(
 
   <main>
     <div class="report-header">
-      <h1 class="report-title">{report.title}</h1>
+      <h1 class="report-title">{safe_report_title}</h1>
       <div class="report-meta">
         <div class="meta-item">
-          <span class="meta-label">Type:</span>
-          <span class="report-type-badge badge-{report.report_type}">{report.report_type.replace('_', ' ').title()}</span>
-        </div>
+           <span class="meta-label">Type:</span>
+           <span class="report-type-badge badge-{safe_report_type_class}">{safe_report_type_label}</span>
+         </div>
         <div class="meta-item">
           <span class="meta-label">Generated:</span>
           <span>{report.generated_at.strftime('%B %d, %Y at %H:%M UTC')}</span>
@@ -2246,7 +2343,7 @@ def export_report_html(
         </div>
         <div class="meta-item">
           <span class="meta-label">Classification:</span>
-          <span style="color: var(--danger); font-weight: 600;">{confidentiality.split('-')[0].strip() if '-' in confidentiality else confidentiality}</span>
+          <span style="color: var(--danger); font-weight: 600;">{html.escape((confidentiality.split('-')[0].strip() if '-' in confidentiality else confidentiality), quote=False)}</span>
         </div>
       </div>
     </div>
@@ -2257,13 +2354,13 @@ def export_report_html(
     
     <section class="sources-section">
       <h2>Source Articles</h2>
-      {"".join([f'<div class="source-item"><a href="{a.url}" target="_blank">{a.title}</a></div>' if a.url else f'<div class="source-item">{a.title}</div>' for a in articles])}
+      {sources_html}
     </section>
   </main>
   
   <footer>
-    <div class="footer-classification">{confidentiality}</div>
-    <div class="footer-text">{company_name} • Threat Intelligence Report • Generated by Parshu</div>
+    <div class="footer-classification">{safe_confidentiality}</div>
+    <div class="footer-text">{safe_company_name} • Threat Intelligence Report • Generated by Parshu</div>
   </footer>
 </body>
 </html>'''
