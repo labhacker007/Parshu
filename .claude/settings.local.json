@@ -17,7 +17,16 @@
       "Bash(docker-compose:*)",
       "Bash(docker-compose up:*)",
       "Bash(python -m alembic revision:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(COPY-FROM-NEWLOOK.bat)",
+      "Bash(git ls-tree:*)",
+      "Bash(RESTART.bat backend)",
+      "Bash(alembic init:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(auto-complete-day3.bat)",
+      "Bash(cmd.exe:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(dir:*)"
     ]
   }
 }
