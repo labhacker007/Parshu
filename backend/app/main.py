@@ -232,6 +232,10 @@ app.include_router(ollama_setup_router)
 from app.admin.genai_functions import router as genai_functions_router
 app.include_router(genai_functions_router)
 
+# Admin Prompts Management (GenAI Day 4)
+from app.admin.prompts import router as prompts_router
+app.include_router(prompts_router)
+
 # Source Refresh Settings
 from app.integrations.refresh_settings import router as refresh_settings_router
 app.include_router(refresh_settings_router)
