@@ -224,6 +224,10 @@ app.include_router(article_bookmarks_router)
 from app.admin.default_feeds import router as default_feeds_router
 app.include_router(default_feeds_router)
 
+# Admin Ollama Setup (GenAI Day 2)
+from app.admin.ollama_setup import router as ollama_setup_router
+app.include_router(ollama_setup_router)
+
 # Source Refresh Settings
 from app.integrations.refresh_settings import router as refresh_settings_router
 app.include_router(refresh_settings_router)
