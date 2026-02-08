@@ -28,7 +28,7 @@ import {
   MobileOutlined
 } from '@ant-design/icons';
 import { useAuthStore } from '../store';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../styles/themes/ThemeContext';
 import { useTimezone, TIMEZONE_OPTIONS } from '../context/TimezoneContext';
 import { usersAPI } from '../api/client';
 
@@ -46,7 +46,15 @@ function NavBar() {
     restoreRole,
     loadImpersonationState 
   } = useAuthStore();
-  const { currentTheme, setTheme, themes, isDark, fontSizePreference, setFontSize, fontSizeOptions } = useTheme();
+  const { currentTheme, toggleTheme, themes } = useTheme();
+  
+  // Simple theme toggle handler
+  const handleThemeToggle = () => {
+    const themeOrder = ['dark', 'hacker', 'light'];
+    const currentIndex = themeOrder.indexOf(currentTheme);
+    const nextTheme = themeOrder[(currentIndex + 1) % themeOrder.length];
+    toggleTheme(nextTheme);
+  };
   const { setTimezone, getTimezoneAbbr } = useTimezone();
   const navigate = useNavigate();
   const location = useLocation();
@@ -714,6 +722,16 @@ function NavBar() {
       )}
       
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Theme Toggle Button */}
+        <Button 
+          type="text" 
+          onClick={handleThemeToggle}
+          style={{ color: 'var(--text-inverse)' }}
+          title={`Current: ${currentTheme} (Click to switch)`}
+        >
+          {currentTheme === 'hacker' ? '🖥️' : currentTheme === 'light' ? '☀️' : '🌙'}
+        </Button>
+        
         {user ? (
           <Dropdown 
             menu={{ items: userMenuItems }}

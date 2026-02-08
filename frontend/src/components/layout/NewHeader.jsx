@@ -1,134 +1,127 @@
+/**
+ * NewHeader Component
+ * Modern header with theme toggle, search, and notifications
+ */
+
 import React, { useState } from 'react';
-import { Search, Bell, Moon, Sun, Palette, Terminal } from 'lucide-react';
-import { Dropdown, Button, Typography } from 'antd';
-import { NotificationsDropdown } from '../NotificationsDropdown';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../styles/themes/ThemeContext';
+import { ThemeToggleCompact } from '../../styles/themes/ThemeToggle';
+import { 
+  Search, 
+  Bell, 
+  Settings, 
+  User,
+  Menu,
+  Shield,
+  LogOut
+} from 'lucide-react';
 
-const { Text } = Typography;
-
-// Simple theme options
-const THEMES = [
-  { id: 'graphite', name: 'Graphite', icon: <Moon className="w-4 h-4" /> },
-  { id: 'daylight', name: 'Daylight', icon: <Sun className="w-4 h-4" /> },
-  { id: 'matrix', name: 'Matrix', icon: <Terminal className="w-4 h-4" /> },
-];
-
-export function NewHeader({ title, subtitle }) {
+export function NewHeader({ 
+  onMenuToggle, 
+  user, 
+  onLogout,
+  notifications = [] 
+}) {
+  const { currentTheme } = useTheme();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { currentTheme, setTheme } = useTheme();
 
-  // Theme switcher dropdown
-  const themeMenu = (
-    <div 
-      className="w-48 rounded-lg shadow-xl py-2"
-      style={{ 
-        background: currentTheme?.colors?.bgCard || '#1A1D24',
-        border: `1px solid ${currentTheme?.colors?.borderDefault || 'rgba(113, 113, 122, 0.2)'}`,
-      }}
-    >
-      {THEMES.map((t) => (
-        <button
-          key={t.id}
-          className="w-full px-4 py-2 flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
-          style={{ 
-            background: currentTheme?.id === t.id 
-              ? currentTheme?.colors?.primaryLight || 'rgba(59, 130, 246, 0.1)'
-              : 'transparent',
-          }}
-          onClick={() => setTheme(t.id)}
-        >
-          <span style={{ color: currentTheme?.colors?.textSecondary }}>
-            {t.icon}
-          </span>
-          <Text 
-            style={{ 
-              color: currentTheme?.id === t.id 
-                ? currentTheme?.colors?.primary 
-                : currentTheme?.colors?.textPrimary,
-              margin: 0,
-            }}
-          >
-            {t.name}
-          </Text>
-        </button>
-      ))}
-    </div>
-  );
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <header 
-      className="h-16 flex items-center justify-between px-6 sticky top-0 z-40"
-      style={{ 
-        background: currentTheme?.colors?.bgNavbar || '#0F1115', 
-        borderBottom: `1px solid ${currentTheme?.colors?.borderSubtle || 'rgba(113, 113, 122, 0.1)'}`,
-      }}
-    >
-      {/* Left: Title */}
-      <div>
-        <h1 
-          className="text-xl font-semibold" 
-          style={{ color: currentTheme?.colors?.textPrimary || '#FFFFFF' }}
-        >
-          {title}
-        </h1>
-        {subtitle && (
-          <p 
-            className="text-sm" 
-            style={{ color: currentTheme?.colors?.textMuted || '#71717A' }}
-          >
-            {subtitle}
-          </p>
-        )}
+    <header className="new-header">
+      <div className="header-left">
+        <button className="menu-btn" onClick={onMenuToggle}>
+          <Menu className="w-5 h-5" />
+        </button>
+        
+        <div className="logo">
+          <Shield className="w-8 h-8" />
+          <span className="logo-text">PARSHU</span>
+          <span className="logo-badge">TI</span>
+        </div>
       </div>
 
-      {/* Right: Search & Actions */}
-      <div className="flex items-center gap-3">
-        {/* Search */}
-        <div className="relative">
-          <Search 
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
-            style={{ color: currentTheme?.colors?.textMuted || '#71717A' }} 
-          />
+      <div className="header-center">
+        <div className="search-box">
+          <Search className="search-icon w-4 h-4" />
           <input
             type="text"
             placeholder="Search articles, IOCs, hunts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2 w-80 rounded-lg text-sm focus:outline-none transition-all"
-            style={{ 
-              background: currentTheme?.colors?.bgElevated || '#252830', 
-              border: `1px solid ${currentTheme?.colors?.borderDefault || 'rgba(113, 113, 122, 0.2)'}`,
-              color: currentTheme?.colors?.textPrimary || '#FFFFFF',
-            }}
           />
+          <kbd className="search-shortcut">Ctrl+K</kbd>
         </div>
+      </div>
 
+      <div className="header-right">
         {/* Theme Toggle */}
-        <Dropdown 
-          dropdownRender={() => themeMenu}
-          placement="bottomRight"
-          arrow
-        >
-          <Button
-            type="text"
-            icon={
-              <Palette 
-                className="w-5 h-5" 
-                style={{ color: currentTheme?.colors?.textSecondary || '#A1A1AA' }} 
-              />
-            }
-            style={{
-              width: 40,
-              height: 40,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          />
-        </Dropdown>
+        <ThemeToggleCompact />
 
         {/* Notifications */}
-        <NotificationsDropdown />
+        <div className="notification-wrapper">
+          <button 
+            className="icon-btn"
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="notification-badge">{unreadCount}</span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <div className="dropdown notifications-dropdown">
+              <div className="dropdown-header">
+                <h4>Notifications</h4>
+                <button className="text-btn">Mark all read</button>
+              </div>
+              <div className="notifications-list">
+                {notifications.length === 0 ? (
+                  <p className="empty-state">No notifications</p>
+                ) : (
+                  notifications.map((notif, idx) => (
+                    <div key={idx} className={`notification-item ${notif.type}`}>
+                      <span className="notification-text">{notif.message}</span>
+                      <span className="notification-time">{notif.time}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Profile */}
+        <div className="profile-wrapper">
+          <button 
+            className="profile-btn"
+            onClick={() => setShowProfile(!showProfile)}
+          >
+            <div className="avatar">
+              {user?.name?.charAt(0) || <User className="w-5 h-5" />}
+            </div>
+            <div className="profile-info">
+              <span className="profile-name">{user?.name || 'Admin'}</span>
+              <span className="profile-role">{user?.role || 'Administrator'}</span>
+            </div>
+          </button>
+
+          {showProfile && (
+            <div className="dropdown profile-dropdown">
+              <a href="/settings" className="dropdown-item">
+                <Settings className="w-4 h-4" />
+                Settings
+              </a>
+              <button className="dropdown-item" onClick={onLogout}>
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
