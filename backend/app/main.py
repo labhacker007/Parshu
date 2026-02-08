@@ -228,6 +228,10 @@ app.include_router(default_feeds_router)
 from app.admin.ollama_setup import router as ollama_setup_router
 app.include_router(ollama_setup_router)
 
+# Admin GenAI Functions (GenAI Day 3)
+from app.admin.genai_functions import router as genai_functions_router
+app.include_router(genai_functions_router)
+
 # Source Refresh Settings
 from app.integrations.refresh_settings import router as refresh_settings_router
 app.include_router(refresh_settings_router)
