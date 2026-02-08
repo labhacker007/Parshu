@@ -15,7 +15,7 @@ import {
   SafetyOutlined, ClusterOutlined, PlusOutlined, DeleteOutlined,
   FileTextOutlined, BugOutlined, AimOutlined, BarChartOutlined, AuditOutlined,
   HistoryOutlined, BookOutlined, QuestionCircleOutlined, SendOutlined,
-  BgColorsOutlined
+  BgColorsOutlined, EyeOutlined
 } from '@ant-design/icons';
 import ConfigurationManager from '../components/ConfigurationManager';
 import GuardrailsManager from '../components/GuardrailsManager';
