@@ -1,5 +1,5 @@
 """
-Unified Permission System for Parshu Platform.
+Unified Permission System for Jyoti Platform.
 
 This module is consumed by:
 - `/users/my-permissions` (frontend navigation / impersonation support)

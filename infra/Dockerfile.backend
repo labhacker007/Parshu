@@ -27,6 +27,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY backend/app /app/app
 COPY backend/migrations /app/migrations
+COPY backend/alembic /app/alembic
+COPY backend/alembic.ini /app/alembic.ini
 COPY config /app/config
 
 RUN chown -R appuser:appuser /app

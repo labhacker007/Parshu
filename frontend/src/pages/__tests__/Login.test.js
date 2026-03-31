@@ -14,7 +14,7 @@ test('renders login UI with form and test credentials', () => {
     </BrowserRouter>
   );
 
-  expect(screen.getByText('Parshu Login')).toBeInTheDocument();
+  expect(screen.getByText('Jyoti Login')).toBeInTheDocument();
   expect(screen.getByPlaceholderText('analyst@example.com')).toBeInTheDocument();
   expect(screen.getByPlaceholderText('Password')).toBeInTheDocument();
   expect(screen.getByText(/Admin credentials/i)).toBeInTheDocument();

@@ -8,12 +8,9 @@ import { usersAPI } from '../api/client';
 const PATH_TO_PAGE_KEY = {
   '/dashboard': 'dashboard',
   '/news': 'feed',
-  '/articles': 'articles',
-  '/intelligence': 'intelligence',
-  '/hunts': 'hunts',
-  '/reports': 'reports',
   '/sources': 'sources',
   '/watchlist': 'watchlist',
+  '/profile': 'profile',
   '/audit': 'audit',
   '/admin': 'admin',
 };

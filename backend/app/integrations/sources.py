@@ -440,11 +440,7 @@ def ingest_feed_sync(db: Session, source: FeedSource) -> IngestionResult:
             db.add(article)
             db.flush()  # Get article ID for extraction
             
-            extraction_text = f"{entry['title']}
-
-{entry.get('summary', '')}
-
-{entry.get('raw_content', '')}"
+            extraction_text = f"{entry['title']}\n\n{entry.get('summary', '')}\n\n{entry.get('raw_content', '')}"
             source_url = entry.get("url") or source.url
 
             try:
@@ -693,7 +689,7 @@ def ingest_custom_feed(
         fetch_result = safe_fetch_text_sync(
             payload.url,
             policy=policy,
-            headers={"User-Agent": "Parshu Custom Feed/1.0"},
+            headers={"User-Agent": "Jyoti Feed Reader/1.0"},
             timeout_seconds=30.0,
             max_bytes=10_000_000
         )

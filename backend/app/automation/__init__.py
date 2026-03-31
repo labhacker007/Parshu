@@ -1,1 +1,1 @@
-"""Automation module for fully automated threat intelligence workflows."""
+"""Placeholder automation module - scheduled tasks to be implemented."""

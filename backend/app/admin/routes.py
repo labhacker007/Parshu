@@ -921,7 +921,7 @@ async def quick_setup_ollama(
     3. Saves the configuration
     4. Sets Ollama as the primary GenAI provider if requested
     
-    IMPORTANT: Since Parshu runs in Docker, 'localhost' inside the container 
+    IMPORTANT: Since Jyoti runs in Docker, 'localhost' inside the container 
     refers to the container itself, NOT your host machine. Use one of:
     - http://host.docker.internal:11434 (Mac/Windows - to reach host's Ollama)
     - http://ollama:11434 (if Ollama runs as a Docker service in same network)
@@ -973,7 +973,7 @@ async def quick_setup_ollama(
         # Provide detailed help message
         error_msg = f"""Cannot connect to Ollama. Tried: {', '.join(attempted_urls)}
 
-SOLUTION (Parshu runs in Docker, so networking is different):
+SOLUTION (Jyoti runs in Docker, so networking is different):
 
 1. If Ollama runs on your HOST machine (most common):
    - Use URL: http://host.docker.internal:11434

@@ -41,7 +41,7 @@ class FeedParser:
                 url,
                 policy=policy,
                 headers={
-                    "User-Agent": "Parshu Feed Reader/1.0",
+                    "User-Agent": "Jyoti Feed Reader/1.0",
                     "Accept": "application/rss+xml,application/atom+xml,application/xml,text/xml,*/*;q=0.8",
                 },
                 timeout_seconds=float(timeout),

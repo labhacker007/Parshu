@@ -200,7 +200,7 @@ class EmailNotifier:
             </div>
             
             <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-                <p>This is an automated notification from Parshu</p>
+                <p>This is an automated notification from Jyoti</p>
             </div>
         </body>
         </html>
@@ -250,7 +250,7 @@ Log in to the dashboard for full details.
             </div>
             
             <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-                <p>This report was shared from Parshu - Threat Intelligence & Hunt Platform</p>
+                <p>This report was shared from Jyoti - News Feed Platform</p>
             </div>
         </body>
         </html>

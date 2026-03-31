@@ -25,7 +25,7 @@ const FONT_SIZES = {
 
 export const ThemeProvider = ({ children }) => {
   const [currentThemeId, setCurrentThemeId] = useState(() => {
-    const saved = localStorage.getItem('orion-theme');
+    const saved = localStorage.getItem('jyoti-theme');
     // Map old theme IDs to new ones if needed
     const themeMap = {
       'arctic-blue': 'command-center',
@@ -42,15 +42,15 @@ export const ThemeProvider = ({ children }) => {
   });
 
   const [terminalMode, setTerminalMode] = useState(() => {
-    return localStorage.getItem('orion-terminal-mode') === 'true';
+    return localStorage.getItem('jyoti-terminal-mode') === 'true';
   });
 
   const [neonMode, setNeonMode] = useState(() => {
-    return localStorage.getItem('orion-neon-mode') === 'true';
+    return localStorage.getItem('jyoti-neon-mode') === 'true';
   });
   
   const [fontSizePreference, setFontSizePreference] = useState(() => {
-    const saved = localStorage.getItem('orion-font-size');
+    const saved = localStorage.getItem('jyoti-font-size');
     return saved && FONT_SIZES[saved] ? saved : 'default';
   });
 
@@ -252,10 +252,10 @@ export const ThemeProvider = ({ children }) => {
     // ============================================
     // SAVE TO LOCALSTORAGE
     // ============================================
-    localStorage.setItem('orion-theme', currentThemeId);
-    localStorage.setItem('orion-terminal-mode', terminalMode.toString());
-    localStorage.setItem('orion-neon-mode', neonMode.toString());
-    localStorage.setItem('orion-font-size', fontSizePreference);
+    localStorage.setItem('jyoti-theme', currentThemeId);
+    localStorage.setItem('jyoti-terminal-mode', terminalMode.toString());
+    localStorage.setItem('jyoti-neon-mode', neonMode.toString());
+    localStorage.setItem('jyoti-font-size', fontSizePreference);
   }, [currentThemeId, currentTheme, terminalMode, neonMode, fontSizePreference]);
 
   const setTheme = (themeId) => {

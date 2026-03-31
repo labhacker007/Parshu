@@ -2980,7 +2980,7 @@ const GuardrailsManager = () => {
 # =======================
 
 [BASE INSTRUCTIONS]
-You are a specialized cybersecurity AI assistant for the Parshu platform.
+You are a specialized AI assistant for the Jyoti platform.
 Your primary functions include threat intelligence analysis, IOC extraction, 
 and security query generation.
 

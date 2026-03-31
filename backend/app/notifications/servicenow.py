@@ -209,7 +209,7 @@ Hunt Execution ID: {hunt_execution_id}
 Findings Summary:
 {findings_summary}
 
-This incident was automatically created by the Parshu platform based on threat intelligence analysis.
+This incident was automatically created by the Jyoti platform based on news intelligence analysis.
 Please review the findings and take appropriate action.
 """
     
@@ -227,7 +227,7 @@ Please review the findings and take appropriate action.
         priority=priority,
         category="threat_intelligence",
         additional_fields={
-            "u_threat_source": "Parshu",
+            "u_threat_source": "Jyoti",
             "u_hunt_platform": hunt_platform,
             "u_hits_count": hits_count,
             "u_hunt_execution_id": hunt_execution_id

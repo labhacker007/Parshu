@@ -8,19 +8,12 @@ from app.audit.middleware import AuditMiddleware
 from app.core.rate_limit import RateLimitMiddleware
 from app.routers import router as auth_router
 from app.articles.routes import router as articles_router
-from app.hunts.routes import router as hunts_router
-from app.reports.routes import router as reports_router
 from app.integrations.sources import router as sources_router
-from app.connectors.routes import router as connectors_router
 from app.watchlist.routes import router as watchlist_router
 from app.audit.routes import router as audit_router
-from app.automation.routes import router as automation_router
 from app.users.routes import router as users_router
 from app.auth.saml import router as saml_router
 from app.admin.routes import router as admin_router
-from app.chatbot.routes import router as chatbot_router
-from app.iocs.routes import router as iocs_router
-# from app.guardrails.routes import router as guardrails_router  # TODO: Fix import issues
 from app.core.logging import logger
 
 
@@ -96,25 +89,8 @@ async def lifespan(app: FastAPI):
                     os.chdir(original_cwd)
         except Exception as e:
             logger.error("auto_seed_failed", error=str(e))
-    
-    # Initialize scheduler for automated hunts (opt-in)
-    from app.automation.scheduler import init_scheduler, shutdown_scheduler
-    if settings.ENABLE_AUTOMATION_SCHEDULER:
-        try:
-            init_scheduler()
-            logger.info("scheduler_started")
-        except Exception as e:
-            logger.error("scheduler_start_failed", error=str(e))
-    
+
     yield
-    
-    # Shutdown scheduler
-    if settings.ENABLE_AUTOMATION_SCHEDULER:
-        try:
-            shutdown_scheduler()
-            logger.info("scheduler_stopped")
-        except Exception as e:
-            logger.error("scheduler_stop_failed", error=str(e))
     
     logger.info("app_shutdown")
 
@@ -123,7 +99,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Parshu - Threat Intelligence & Hunt Platform API",
+    description="Jyoti - News Feed Aggregator with RBAC",
     lifespan=lifespan
 )
 
@@ -210,61 +186,63 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(saml_router)  # SAML/SSO authentication
 app.include_router(articles_router)
-app.include_router(hunts_router)
-app.include_router(reports_router)
 app.include_router(sources_router)
-app.include_router(connectors_router)
 app.include_router(watchlist_router)
 app.include_router(audit_router)
-app.include_router(automation_router)
 app.include_router(users_router)
 app.include_router(admin_router)
-app.include_router(chatbot_router)  # AI-powered chatbot
-app.include_router(iocs_router)  # IOC management
-# app.include_router(guardrails_router)  # Guardrails management - TODO: Fix imports and enable
 
 # User Custom Feeds
 from app.users.feeds import router as user_feeds_router
 app.include_router(user_feeds_router)
 
-# Knowledge Base for RAG
-from app.knowledge.routes import router as knowledge_router
-app.include_router(knowledge_router)
+# User Watchlist
+from app.users.watchlist import router as user_watchlist_router
+app.include_router(user_watchlist_router)
 
-# GenAI Help & Troubleshooting
-from app.genai.routes import router as genai_router
-app.include_router(genai_router)
+# User Categories
+from app.users.categories import router as user_categories_router
+app.include_router(user_categories_router)
 
-# Analytics & Reporting Dashboard
-from app.analytics.routes import router as analytics_router
-app.include_router(analytics_router)
+# User Content Fetching
+from app.users.content import router as user_content_router
+app.include_router(user_content_router)
+
+# Article Summarization (GenAI)
+from app.articles.summarization import router as article_summarization_router
+app.include_router(article_summarization_router)
+
+# Article Reports (PDF/Word export)
+from app.articles.reports import router as article_reports_router
+app.include_router(article_reports_router)
+
+# Article Bookmarks & Read Tracking
+from app.articles.bookmarks import router as article_bookmarks_router
+app.include_router(article_bookmarks_router)
+
+# Admin Default Feeds
+from app.admin.default_feeds import router as default_feeds_router
+app.include_router(default_feeds_router)
+
+# Admin Ollama Setup (GenAI Day 2)
+from app.admin.ollama_setup import router as ollama_setup_router
+app.include_router(ollama_setup_router)
+
+# Admin GenAI Functions (GenAI Day 3)
+from app.admin.genai_functions import router as genai_functions_router
+app.include_router(genai_functions_router)
+
+# Admin Prompts Management (GenAI Day 4)
+from app.admin.prompts import router as prompts_router
+app.include_router(prompts_router)
+
+# Admin Guardrails Management (GenAI Day 5)
+from app.admin.guardrails import router as guardrails_router
+app.include_router(guardrails_router)
 
 # Source Refresh Settings
 from app.integrations.refresh_settings import router as refresh_settings_router
 app.include_router(refresh_settings_router)
-
-# Report Version Control
-from app.reports.version_control import router as report_versions_router
-app.include_router(report_versions_router)
-
-# Agentic Intelligence System
-from app.intelligence.routes import router as intelligence_router
-app.include_router(intelligence_router)
-
-# Hunt Tracking System
-from app.hunts.tracking import router as hunt_tracking_router
-app.include_router(hunt_tracking_router)
-
-# GenAI Testing Lab
-from app.genai.testing import router as genai_testing_router
-app.include_router(genai_testing_router)
-
-# Cybersecurity Guardrails
-from app.guardrails.guardrail_routes import router as guardrail_routes_router
-app.include_router(guardrail_routes_router)
-
-# Import GenAI models to ensure they're registered with SQLAlchemy
-from app.genai import models as genai_models
 
 
 @app.get("/health")
@@ -299,11 +277,45 @@ def health_check():
     }
 
 
-# DEBUG ENDPOINTS REMOVED FOR SECURITY
-# These endpoints exposed sensitive data without authentication
-# Use proper authenticated endpoints instead:
-# - GET /sources/ for feed sources
-# - GET /articles/triage for articles
+# Prometheus-compatible metrics endpoint
+@app.get("/metrics")
+def metrics():
+    """Prometheus-compatible metrics endpoint."""
+    from app.core.database import SessionLocal
+    from app.models import User, FeedSource, Article
+    import time
+
+    db = SessionLocal()
+    try:
+        user_count = db.query(User).count()
+        source_count = db.query(FeedSource).count()
+        article_count = db.query(Article).count()
+        active_sources = db.query(FeedSource).filter(FeedSource.is_active == True).count()
+    except Exception:
+        user_count = source_count = article_count = active_sources = 0
+    finally:
+        db.close()
+
+    lines = [
+        "# HELP jyoti_users_total Total number of users",
+        "# TYPE jyoti_users_total gauge",
+        f"jyoti_users_total {user_count}",
+        "# HELP jyoti_sources_total Total number of feed sources",
+        "# TYPE jyoti_sources_total gauge",
+        f"jyoti_sources_total {source_count}",
+        "# HELP jyoti_sources_active Active feed sources",
+        "# TYPE jyoti_sources_active gauge",
+        f"jyoti_sources_active {active_sources}",
+        "# HELP jyoti_articles_total Total number of articles",
+        "# TYPE jyoti_articles_total gauge",
+        f"jyoti_articles_total {article_count}",
+        "# HELP jyoti_up Application is running",
+        "# TYPE jyoti_up gauge",
+        "jyoti_up 1",
+    ]
+
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse("\n".join(lines) + "\n", media_type="text/plain")
 
 
 @app.get("/")

@@ -58,7 +58,7 @@ function AuditLogs() {
           event_type: 'LOGIN',
           action: 'login_success',
           user_id: 1,
-          user_email: 'admin@orion.local',
+          user_email: 'admin@jyoti.local',
           resource_type: null,
           resource_id: null,
           details: { saml: false },

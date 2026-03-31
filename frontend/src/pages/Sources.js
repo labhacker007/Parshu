@@ -53,11 +53,38 @@ function Sources() {
     high_priority_articles: 0
   });
   const [refreshSettingsVisible, setRefreshSettingsVisible] = useState(false);
+  const [defaultFeeds, setDefaultFeeds] = useState([]);
 
   useEffect(() => {
     fetchSources();
     fetchStats();
+    if (isAdmin) fetchDefaultFeeds();
   }, []);
+
+  const fetchDefaultFeeds = async () => {
+    try {
+      const response = await sourcesAPI.listDefaultFeeds();
+      const ids = (response.data || []).map(d => d.source_id);
+      setDefaultFeeds(ids);
+    } catch (err) {
+      // Default feeds API may not be available
+    }
+  };
+
+  const handleToggleDefault = async (sourceId, currentlyDefault) => {
+    try {
+      if (currentlyDefault) {
+        await sourcesAPI.removeDefaultFeed(sourceId);
+        message.success('Removed from default feeds');
+      } else {
+        await sourcesAPI.addDefaultFeed(sourceId);
+        message.success('Marked as default feed for new users');
+      }
+      fetchDefaultFeeds();
+    } catch (err) {
+      message.error(err.response?.data?.detail || 'Failed to update default feed');
+    }
+  };
 
   const fetchSources = async () => {
     setLoading(true);
@@ -260,6 +287,20 @@ function Sources() {
         </div>
       ),
     },
+    ...(isAdmin ? [{
+      title: 'Default',
+      key: 'is_default',
+      width: 80,
+      render: (_, record) => (
+        <Switch
+          size="small"
+          checked={defaultFeeds.includes(record.id)}
+          onChange={() => handleToggleDefault(record.id, defaultFeeds.includes(record.id))}
+          checkedChildren="Yes"
+          unCheckedChildren="No"
+        />
+      ),
+    }] : []),
     {
       title: 'Last Fetched',
       dataIndex: 'last_fetched',

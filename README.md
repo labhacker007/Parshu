@@ -222,6 +222,19 @@ cp backend/.env.example backend/.env
 # - SAML_METADATA_URL (if using SSO)
 ```
 
+### MyFeeds Docker Environment
+
+1. Copy `.env.myfeeds.example` to `.env.myfeeds` and adjust the secrets/URLs for the MyFeeds fork.
+2. Ensure `BACKEND_PORT` and `FRONTEND_PORT` are set in `.env.myfeeds` (defaults are `18000` and `13000`).
+3. Start the MyFeeds stack so it runs alongside the default setup:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.myfeeds.yml --env-file .env.myfeeds up -d
+```
+
+4. Backend: `http://localhost:18000`, Frontend: `http://localhost:13000`.
+5. To stop it: `docker compose -f docker-compose.yml -f docker-compose.myfeeds.yml --env-file .env.myfeeds down`.
+
 ## Deployment
 
 ### Docker Local

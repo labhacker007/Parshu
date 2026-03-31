@@ -1,6 +1,6 @@
 from enum import Enum
 from datetime import datetime, timedelta
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON, Enum as SQLEnum, UniqueConstraint, Index
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON, Enum as SQLEnum, UniqueConstraint, Index, Float
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -29,13 +29,8 @@ class HuntTriggerType(str, Enum):
 
 
 class UserRole(str, Enum):
-    ADMIN = "ADMIN"
-    EXECUTIVE = "EXECUTIVE"  # C-Suite, CISO - read-only reports and dashboards
-    MANAGER = "MANAGER"  # Team leads - reports, metrics, and team oversight
-    TI = "TI"  # Threat Intelligence Analyst
-    TH = "TH"  # Threat Hunter
-    IR = "IR"  # Incident Response
-    VIEWER = "VIEWER"
+    ADMIN = "ADMIN"  # Full access: manage sources, users, global watchlist
+    USER = "USER"    # Standard user: view feeds, manage personal feeds/watchlist
 
 
 class ExtractedIntelligenceType(str, Enum):
@@ -69,25 +64,36 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     username = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=True)  # Null if SAML auth
+    hashed_password = Column(String, nullable=True)  # Null if OAuth/SAML auth
     full_name = Column(String, nullable=True)
-    role = Column(SQLEnum(UserRole), default=UserRole.VIEWER, nullable=False)  # Primary role
-    
+    role = Column(SQLEnum(UserRole), default=UserRole.USER, nullable=False)  # Primary role
+
     # Multiple roles support - JSON array of additional roles
     # e.g., ["TI", "TH"] means user has TI and TH in addition to primary role
     additional_roles = Column(JSON, default=[])
-    
+
     # Custom per-user permission overrides
     # Format: {"grant": ["view:hunts", "execute:hunts"], "deny": ["manage:users"]}
     # grant: permissions given even if role doesn't have them
     # deny: permissions revoked even if role has them
     custom_permissions = Column(JSON, default={"grant": [], "deny": []})
-    
+
     is_active = Column(Boolean, default=True)
+
+    # SAML authentication
     is_saml_user = Column(Boolean, default=False)
     saml_nameid = Column(String, nullable=True, unique=True)
+
+    # OAuth authentication
+    oauth_provider = Column(String, nullable=True)  # "google", "microsoft", None
+    oauth_subject = Column(String, nullable=True, unique=True)  # OAuth user ID
+    oauth_email = Column(String, nullable=True)
+    oauth_picture = Column(String, nullable=True)  # Profile picture URL
+
+    # Two-factor authentication
     otp_enabled = Column(Boolean, default=False)
     otp_secret = Column(String, nullable=True)
+
     last_login = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -99,6 +105,7 @@ class User(Base):
     )
     audit_events = relationship("AuditLog", back_populates="user")
     hunt_executions = relationship("HuntExecution", back_populates="executed_by")
+    watchlist_keywords = relationship("UserWatchListKeyword", back_populates="user", cascade="all, delete-orphan")
     
     def get_all_roles(self) -> list:
         """Get all roles for this user (primary + additional)."""
@@ -132,6 +139,7 @@ class FeedSource(Base):
     
     articles = relationship("Article", back_populates="feed_source")
     user_preferences = relationship("UserSourcePreference", back_populates="source", cascade="all, delete-orphan")
+    default_settings = relationship("DefaultFeedSource", back_populates="source", cascade="all, delete-orphan")
     
     __table_args__ = (
         Index("idx_feed_source_active", "is_active"),
@@ -181,7 +189,7 @@ class Article(Base):
     content_hash = Column(String(64), nullable=True, index=True)  # SHA-256 hash for dedup
     
     # Dual date tracking
-    ingested_at = Column(DateTime, default=datetime.utcnow, index=True)  # When Parshu ingested the article
+    ingested_at = Column(DateTime, default=datetime.utcnow, index=True)  # When Jyoti ingested the article
     # Note: published_at is the original article publication date from the source
     # Note: created_at is retained for backward compatibility
     
@@ -288,12 +296,49 @@ class ExtractedIntelligence(Base):
 
 class WatchListKeyword(Base):
     __tablename__ = "watchlist_keywords"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     keyword = Column(String, unique=True, index=True, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class UserWatchListKeyword(Base):
+    """User-specific watchlist keywords (in addition to global)."""
+    __tablename__ = "user_watchlist_keywords"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    keyword = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="watchlist_keywords")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "keyword", name="uq_user_watchlist_keyword"),
+        Index("idx_user_watchlist_user", "user_id"),
+    )
+
+
+class DefaultFeedSource(Base):
+    """Admin-defined default feed sources for new users."""
+    __tablename__ = "default_feed_sources"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source_id = Column(Integer, ForeignKey("feed_sources.id", ondelete="CASCADE"), nullable=False)
+    is_default = Column(Boolean, default=True)  # Auto-subscribe new users
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    source = relationship("FeedSource", back_populates="default_settings")
+    created_by = relationship("User")
+
+    __table_args__ = (
+        Index("idx_default_feed_source", "source_id"),
+    )
 
 
 class Hunt(Base):
@@ -870,6 +915,80 @@ class EnvironmentContext(Base):
 
 
 # ============================================================================
+# USER CATEGORIES - Custom categories for organizing feeds
+# ============================================================================
+
+class Category(Base):
+    """
+    User-defined categories for organizing custom feeds.
+    Allows users to create custom categories, assign colors/icons,
+    and organize their feeds via drag & drop.
+    """
+    __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(100), nullable=False)
+    color = Column(String(7), nullable=True)  # Hex color like "#FF5733"
+    icon = Column(String(50), nullable=True)  # Icon name (e.g., "RssOutlined", "BookOutlined")
+    sort_order = Column(Integer, default=0)  # For drag-drop ordering
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", backref="categories")
+    feeds = relationship("UserFeed", back_populates="category_obj", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_user_category_name"),
+        Index("idx_category_user", "user_id"),
+    )
+
+
+# ============================================================================
+# FETCHED CONTENT - Multi-format content from user-provided URLs
+# ============================================================================
+
+class FetchedContent(Base):
+    """
+    Stores content fetched from user-provided URLs in various formats.
+    Supports HTML, PDF, Word documents, CSV files, and other formats.
+    """
+    __tablename__ = "fetched_content"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    feed_id = Column(Integer, ForeignKey("user_feeds.id", ondelete="SET NULL"), nullable=True)
+
+    # Content details
+    url = Column(String(2048), nullable=False, index=True)
+    title = Column(Text, nullable=True)
+    content = Column(Text, nullable=True)  # Extracted text content
+    content_format = Column(String(20), nullable=True)  # html, pdf, docx, csv, xlsx, txt
+    content_metadata = Column(JSON, nullable=True)  # Format-specific metadata
+
+    # GenAI analysis (optional)
+    executive_summary = Column(Text, nullable=True)
+    technical_summary = Column(Text, nullable=True)
+    iocs = Column(JSON, nullable=True)  # Extracted IOCs
+
+    # Audit
+    fetched_at = Column(DateTime, default=datetime.utcnow, index=True)
+    analyzed_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User", backref="fetched_contents")
+    feed = relationship("UserFeed", backref="fetched_contents")
+
+    __table_args__ = (
+        Index("idx_fetched_content_user", "user_id"),
+        Index("idx_fetched_content_feed", "feed_id"),
+        Index("idx_fetched_content_format", "content_format"),
+    )
+
+
+# ============================================================================
 # USER CUSTOM FEEDS - Personal RSS/Atom feeds per user
 # ============================================================================
 
@@ -888,8 +1007,9 @@ class UserFeed(Base):
     name = Column(String(255), nullable=False)
     url = Column(String(2048), nullable=False)
     description = Column(Text, nullable=True)
-    category = Column(String(100), default="custom")  # custom, news, vendor, research, etc.
-    feed_type = Column(String(50), default="rss")  # rss, atom
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
+    category = Column(String(100), default="custom")  # Legacy field, kept for backward compatibility
+    feed_type = Column(String(50), default="rss")  # rss, atom, html
     
     # Status
     is_active = Column(Boolean, default=True)
@@ -905,9 +1025,10 @@ class UserFeed(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationship
+    # Relationships
     user = relationship("User", backref="custom_feeds")
-    
+    category_obj = relationship("Category", back_populates="feeds")
+
     __table_args__ = (
         UniqueConstraint("user_id", "url", name="uq_user_feed_url"),
         Index("idx_user_feed_user", "user_id"),
@@ -1026,4 +1147,248 @@ class ArticleHuntTracking(Base):
     __table_args__ = (
         UniqueConstraint("article_id", "hunt_id", name="uq_article_hunt_tracking"),
         Index("idx_article_hunt_tracking_status", "generation_status", "launch_status"),
+    )
+
+
+# ============================================================================
+# GENAI ADMIN MANAGEMENT - Prompts, Skills, Guardrails
+# ============================================================================
+
+class Prompt(Base):
+    """Versioned prompt templates for GenAI functions."""
+    __tablename__ = "prompts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    function_type = Column(String(50), nullable=False, index=True)  # "summarization", "ioc_extraction", etc.
+
+    # Template with variables
+    template = Column(Text, nullable=False)
+
+    # Version control
+    version = Column(Integer, default=1)
+    is_active = Column(Boolean, default=True, index=True)
+    parent_id = Column(Integer, ForeignKey("prompts.id"), nullable=True)
+
+    # Metadata
+    model_id = Column(String(100), nullable=True)  # e.g., "gpt-4o-mini", "llama3.2"
+    temperature = Column(Float, default=0.7)
+    max_tokens = Column(Integer, default=500)
+
+    # Audit
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Tags for organization
+    tags = Column(JSON, nullable=True)
+
+    # Relationships
+    created_by = relationship("User", foreign_keys=[created_by_id])
+    parent = relationship("Prompt", remote_side=[id], backref="versions")
+    variables = relationship("PromptVariable", back_populates="prompt", cascade="all, delete-orphan")
+    skills = relationship("PromptSkill", back_populates="prompt", cascade="all, delete-orphan")
+    guardrails = relationship("PromptGuardrail", back_populates="prompt", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("idx_prompt_function_type", "function_type"),
+        Index("idx_prompt_active", "is_active"),
+    )
+
+
+class PromptVariable(Base):
+    """Variables used in prompt templates."""
+    __tablename__ = "prompt_variables"
+
+    id = Column(Integer, primary_key=True)
+    prompt_id = Column(Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(50), nullable=False)
+    type = Column(String(20), default="string")  # string, number, boolean, array
+    default_value = Column(Text, nullable=True)
+    description = Column(Text, nullable=True)
+    is_required = Column(Boolean, default=True)
+
+    # Relationship
+    prompt = relationship("Prompt", back_populates="variables")
+
+    __table_args__ = (
+        Index("idx_prompt_variable_prompt", "prompt_id"),
+    )
+
+
+class Skill(Base):
+    """Reusable skills/instructions for prompts."""
+    __tablename__ = "skills"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+
+    # The actual skill instruction
+    instruction = Column(Text, nullable=False)
+
+    # Categorization
+    category = Column(String(50), nullable=True)  # "persona", "formatting", "domain_expertise"
+
+    # Audit
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True, index=True)
+
+    # Relationship
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+    __table_args__ = (
+        Index("idx_skill_active", "is_active"),
+    )
+
+
+class Guardrail(Base):
+    """Validation rules for LLM outputs."""
+    __tablename__ = "guardrails"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+
+    # Guardrail type
+    type = Column(String(50), nullable=False, index=True)
+    # Types: "length", "toxicity", "pii", "format", "keywords_required", "keywords_forbidden"
+
+    # Configuration (JSON)
+    config = Column(JSON, nullable=False)
+
+    # Action on failure
+    action = Column(String(20), default="retry")  # "retry", "reject", "fix", "log"
+    max_retries = Column(Integer, default=2)
+
+    # Audit
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True, index=True)
+
+    # Relationship
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+    __table_args__ = (
+        Index("idx_guardrail_type", "type"),
+        Index("idx_guardrail_active", "is_active"),
+    )
+
+
+class PromptSkill(Base):
+    """Many-to-many: Prompts <-> Skills."""
+    __tablename__ = "prompt_skills"
+
+    id = Column(Integer, primary_key=True)
+    prompt_id = Column(Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False)
+    skill_id = Column(Integer, ForeignKey("skills.id", ondelete="CASCADE"), nullable=False)
+    order = Column(Integer, default=0)  # Order in which skills are applied
+
+    prompt = relationship("Prompt", back_populates="skills")
+    skill = relationship("Skill")
+
+    __table_args__ = (
+        UniqueConstraint("prompt_id", "skill_id", name="uq_prompt_skill"),
+        Index("idx_prompt_skill_prompt", "prompt_id"),
+    )
+
+
+class PromptGuardrail(Base):
+    """Many-to-many: Prompts <-> Guardrails."""
+    __tablename__ = "prompt_guardrails"
+
+    id = Column(Integer, primary_key=True)
+    prompt_id = Column(Integer, ForeignKey("prompts.id", ondelete="CASCADE"), nullable=False)
+    guardrail_id = Column(Integer, ForeignKey("guardrails.id", ondelete="CASCADE"), nullable=False)
+    order = Column(Integer, default=0)  # Order in which guardrails are checked
+
+    prompt = relationship("Prompt", back_populates="guardrails")
+    guardrail = relationship("Guardrail")
+
+    __table_args__ = (
+        UniqueConstraint("prompt_id", "guardrail_id", name="uq_prompt_guardrail"),
+        Index("idx_prompt_guardrail_prompt", "prompt_id"),
+    )
+
+
+class GenAIFunctionConfig(Base):
+    """Configuration for each GenAI function."""
+    __tablename__ = "genai_function_configs"
+
+    id = Column(Integer, primary_key=True)
+    function_name = Column(String(100), unique=True, nullable=False, index=True)
+    # e.g., "executive_summary", "technical_summary", "ioc_extraction", "qa_chat"
+
+    display_name = Column(String(100), nullable=True)
+    description = Column(Text, nullable=True)
+
+    # Active prompt for this function
+    active_prompt_id = Column(Integer, ForeignKey("prompts.id"), nullable=True)
+
+    # Model assignment
+    primary_model_id = Column(String(100), nullable=True)  # Can override global primary
+    secondary_model_id = Column(String(100), nullable=True)  # Fallback
+
+    # Cost tracking
+    total_requests = Column(Integer, default=0)
+    total_tokens = Column(Integer, default=0)
+    total_cost = Column(Float, default=0.0)
+
+    # Audit
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    active_prompt = relationship("Prompt", foreign_keys=[active_prompt_id])
+    updated_by = relationship("User", foreign_keys=[updated_by_id])
+
+    __table_args__ = (
+        Index("idx_function_config_name", "function_name"),
+    )
+
+
+class PromptExecutionLog(Base):
+    """Log every prompt execution for debugging."""
+    __tablename__ = "prompt_execution_logs"
+
+    id = Column(Integer, primary_key=True)
+    prompt_id = Column(Integer, ForeignKey("prompts.id"), nullable=True)
+    function_name = Column(String(100), nullable=True, index=True)
+
+    # Input
+    input_variables = Column(JSON, nullable=True)
+    final_prompt = Column(Text, nullable=True)
+
+    # Model
+    model_used = Column(String(100), nullable=True)
+    temperature = Column(Float, nullable=True)
+    max_tokens = Column(Integer, nullable=True)
+
+    # Output
+    response = Column(Text, nullable=True)
+    tokens_used = Column(Integer, nullable=True)
+    cost = Column(Float, nullable=True)
+
+    # Guardrails
+    guardrails_passed = Column(Boolean, default=True)
+    guardrail_failures = Column(JSON, nullable=True)
+    retry_count = Column(Integer, default=0)
+
+    # Timing
+    execution_time_ms = Column(Integer, nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # User
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    # Relationships
+    prompt = relationship("Prompt")
+    user = relationship("User")
+
+    __table_args__ = (
+        Index("idx_execution_log_function", "function_name"),
+        Index("idx_execution_log_timestamp", "timestamp"),
+        Index("idx_execution_log_user", "user_id"),
     )

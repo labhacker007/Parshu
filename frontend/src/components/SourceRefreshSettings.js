@@ -36,7 +36,7 @@ const REFRESH_INTERVALS = [
 // Get stored settings
 const getStoredAdminSettings = () => {
   try {
-    return JSON.parse(localStorage.getItem('orion-refresh-admin-settings') || '{}');
+    return JSON.parse(localStorage.getItem('jyoti-refresh-admin-settings') || '{}');
   } catch {
     return {};
   }
@@ -44,7 +44,7 @@ const getStoredAdminSettings = () => {
 
 const getStoredUserSettings = () => {
   try {
-    return JSON.parse(localStorage.getItem('orion-refresh-user-settings') || '{}');
+    return JSON.parse(localStorage.getItem('jyoti-refresh-user-settings') || '{}');
   } catch {
     return {};
   }
@@ -84,7 +84,7 @@ function SourceRefreshSettings({ visible, onClose }) {
   const handleSaveAdminSettings = () => {
     setSaving(true);
     try {
-      localStorage.setItem('orion-refresh-admin-settings', JSON.stringify(adminSettings));
+      localStorage.setItem('jyoti-refresh-admin-settings', JSON.stringify(adminSettings));
       
       // Broadcast to other components
       window.dispatchEvent(new CustomEvent('refresh-settings-changed', { 
@@ -103,7 +103,7 @@ function SourceRefreshSettings({ visible, onClose }) {
   const handleSaveUserSettings = () => {
     setSaving(true);
     try {
-      localStorage.setItem('orion-refresh-user-settings', JSON.stringify(userSettings));
+      localStorage.setItem('jyoti-refresh-user-settings', JSON.stringify(userSettings));
       
       // Broadcast to other components
       window.dispatchEvent(new CustomEvent('refresh-settings-changed', { 
@@ -121,7 +121,7 @@ function SourceRefreshSettings({ visible, onClose }) {
 
   const handleResetToDefault = () => {
     setUserSettings({ my_refresh_seconds: null });
-    localStorage.setItem('orion-refresh-user-settings', JSON.stringify({ my_refresh_seconds: null }));
+    localStorage.setItem('jyoti-refresh-user-settings', JSON.stringify({ my_refresh_seconds: null }));
     message.success('Reset to admin default');
   };
 

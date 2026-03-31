@@ -78,7 +78,7 @@ def ingest_feed_source(self, source_id: int):
                 url=entry["url"],
                 image_url=image_url,
                 published_at=published_at,  # Original publication date from source/page
-                ingested_at=ingestion_time,  # When Parshu ingested the article
+                ingested_at=ingestion_time,  # When Jyoti ingested the article
                 status="NEW"
             )
             

@@ -15,19 +15,11 @@ import {
   SafetyOutlined, ClusterOutlined, PlusOutlined, DeleteOutlined,
   FileTextOutlined, BugOutlined, AimOutlined, BarChartOutlined, AuditOutlined,
   HistoryOutlined, BookOutlined, QuestionCircleOutlined, SendOutlined,
-  BgColorsOutlined
+  BgColorsOutlined, EyeOutlined
 } from '@ant-design/icons';
-import ConnectorsManager from '../components/ConnectorsManager';
 import ConfigurationManager from '../components/ConfigurationManager';
-import GenAITester from '../components/GenAITester';
-import ComprehensiveGenAILab from '../components/ComprehensiveGenAILab';
-// GenAIModelConfig removed - model settings are now in GenAI Testing Lab
 import GuardrailsManager from '../components/GuardrailsManager';
-import RAGDashboard from '../components/RAGDashboard';
-import UnifiedUserManagement from '../components/UnifiedUserManagement';
 import SimpleAccessManager from '../components/SimpleAccessManager';
-import ArchitectureDocs from '../components/ArchitectureDocs';
-import SchedulerManager from '../components/SchedulerManager';
 import ThemeManager from '../components/ThemeManager';
 import { useTimezone } from '../context/TimezoneContext';
 import { adminAPI } from '../api/client';
@@ -36,8 +28,8 @@ import './Admin.css';
 const { Title, Text, Paragraph } = Typography;
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-// Unified Documentation Component - combines Help, Docs, and Architecture
-function ParshuDocumentation({ setActiveTab, availableModels }) {
+// Documentation Component
+function JyotiDocumentation({ setActiveTab, availableModels }) {
   const [aiQuestion, setAiQuestion] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -76,7 +68,7 @@ function ParshuDocumentation({ setActiveTab, availableModels }) {
       } else {
         // Provide helpful fallback response based on question
         const fallbackResponses = {
-          'ollama': 'To set up Ollama:\n1. Install Ollama: brew install ollama (Mac) or follow docs.ollama.ai\n2. Start Ollama: ollama serve\n3. Pull a model: ollama pull llama3\n4. In Parshu Admin → Configuration, set Ollama URL to http://host.docker.internal:11434 (if using Docker)',
+          'ollama': 'To set up Ollama:\n1. Install Ollama: brew install ollama (Mac) or follow docs.ollama.ai\n2. Start Ollama: ollama serve\n3. Pull a model: ollama pull llama3\n4. In Jyoti Admin → Configuration, set Ollama URL to http://host.docker.internal:11434 (if using Docker)',
           'servicenow': 'To configure ServiceNow:\n1. Go to Admin → Configuration → Notifications\n2. Enter your ServiceNow instance URL\n3. Add username and password for API access\n4. Test the connection\n5. Enable "Create tickets on hunt failure" in Automation settings',
           'hunt': 'Hunt query troubleshooting:\n1. Check if platform connector is configured (Admin → Configuration)\n2. Verify API credentials are valid\n3. Ensure article has extracted IOCs\n4. Review Audit Logs for specific errors\n5. Try Preview Query first before executing',
           'feed': 'Feed/RSS troubleshooting:\n1. Verify feed URL is valid (test in browser)\n2. Check Sources page - is the feed active?\n3. Manually click "Fetch Feeds" to test\n4. Check Scheduler is running in Admin → Scheduler\n5. Review backend logs for parsing errors',
@@ -106,7 +98,7 @@ function ParshuDocumentation({ setActiveTab, availableModels }) {
       key: 'getting-started',
       title: 'Getting Started', 
       desc: 'Initial setup and configuration',
-      content: 'Welcome to Parshu! Start by:\n1. Setting up GenAI (Admin → Configuration → GenAI)\n2. Adding RSS feed sources (Sources page)\n3. Configuring hunt platform connectors\n4. Creating user accounts with appropriate roles'
+      content: 'Welcome to Jyoti! Start by:\n1. Setting up GenAI (Admin → Configuration → GenAI)\n2. Adding RSS feed sources (Sources page)\n3. Configuring hunt platform connectors\n4. Creating user accounts with appropriate roles'
     },
     { 
       key: 'genai',
@@ -224,7 +216,7 @@ function ParshuDocumentation({ setActiveTab, availableModels }) {
                     }
                   >
                     <Paragraph type="secondary">
-                      Ask questions about Parshu configuration, troubleshooting, or how to use features.
+                      Ask questions about Jyoti configuration, troubleshooting, or how to use features.
                     </Paragraph>
                     
                     <Input.TextArea 
@@ -314,7 +306,7 @@ function ParshuDocumentation({ setActiveTab, availableModels }) {
         {
           key: 'architecture',
           label: <span><ClusterOutlined /> Architecture</span>,
-          children: <ArchitectureDocs />
+          children: <Paragraph>Jyoti uses a FastAPI + React + PostgreSQL + Redis architecture. See <a href="/docs" target="_blank">API Docs</a> for endpoint reference.</Paragraph>
         },
         {
           key: 'metrics',
@@ -466,7 +458,7 @@ function Admin() {
   
   // Company branding settings for reports
   const [companyBranding, setCompanyBranding] = useState(() => {
-    const saved = localStorage.getItem('orion-company-branding');
+    const saved = localStorage.getItem('jyoti-company-branding');
     return saved ? JSON.parse(saved) : {
       company_name: '',
       company_logo_url: '',
@@ -952,7 +944,7 @@ function Admin() {
       };
       
       // Save to localStorage for now (could also save to backend)
-      localStorage.setItem('orion-company-branding', JSON.stringify(brandingData));
+      localStorage.setItem('jyoti-company-branding', JSON.stringify(brandingData));
       setCompanyBranding(brandingData);
       
       // Also save to backend SystemConfiguration if available
@@ -1021,18 +1013,13 @@ function Admin() {
                 </div>
               </Col>
               <Col span={4}>
-                <div className="stat-tile" onClick={() => navigate('/hunts')} style={{ cursor: 'pointer' }}>
-                  <Statistic title="Hunts" value={stats?.total_hunts || 0} />
+                <div className="stat-tile" onClick={() => navigate('/watchlist')} style={{ cursor: 'pointer' }}>
+                  <Statistic title="Watchlist" value={stats?.active_watchlist_keywords || 0} prefix={<EyeOutlined />} />
                 </div>
               </Col>
               <Col span={4}>
                 <div className="stat-tile" onClick={() => setActiveTab('configuration')} style={{ cursor: 'pointer' }}>
-                  <Statistic title="Active Connectors" value={stats?.active_connectors || 0} suffix={`/ ${stats?.total_connectors || 0}`} />
-                </div>
-              </Col>
-              <Col span={4}>
-                <div className="stat-tile" onClick={() => navigate('/reports')} style={{ cursor: 'pointer' }}>
-                  <Statistic title="Reports" value={stats?.total_reports || 0} prefix={<BarChartOutlined />} />
+                  <Statistic title="Active Sources" value={stats?.active_sources || 0} suffix={`/ ${stats?.total_sources || 0}`} />
                 </div>
               </Col>
             </Row>
@@ -1531,7 +1518,7 @@ function Admin() {
                               content: (
                                 <div>
                                   <p><strong>Current Version:</strong> {settings.app_version}</p>
-                                  <p><strong>Application:</strong> Parshu Threat Intelligence Platform</p>
+                                  <p><strong>Application:</strong> Jyoti News Feed Platform</p>
                                   <p style={{ marginTop: 16 }}>Check the repository for the latest releases and changelog.</p>
                                 </div>
                               )
@@ -1912,7 +1899,7 @@ function Admin() {
                     
                     <Title level={5} style={{ color: '#fa8c16' }}>⚠️ Important: Docker Networking</Title>
                     <Paragraph>
-                      <strong>Parshu runs in Docker.</strong> This means "localhost" inside Parshu refers to the container itself,
+                      <strong>Jyoti runs in Docker.</strong> This means "localhost" inside Jyoti refers to the container itself,
                       NOT your host machine where Ollama runs. Use the correct URL:
                     </Paragraph>
                     
@@ -1958,7 +1945,7 @@ function Admin() {
                           description: <Text code>ollama pull llama3:latest</Text>
                         },
                         {
-                          title: 'Configure in Parshu',
+                          title: 'Configure in Jyoti',
                           description: (
                             <div>
                               URL: <Text code>http://host.docker.internal:11434</Text>
@@ -1972,7 +1959,7 @@ function Admin() {
                     
                     <Divider style={{ margin: '12px 0' }} />
                     
-                    <Title level={5}>How Parshu Uses Ollama</Title>
+                    <Title level={5}>How Jyoti Uses Ollama</Title>
                     <List 
                       size="small"
                       dataSource={[
@@ -2401,8 +2388,8 @@ function Admin() {
     },
     {
       key: 'scheduler',
-      label: <span><ScheduleOutlined /> Job Scheduler</span>,
-      children: <SchedulerManager />,
+      label: <span><ScheduleOutlined /> Feed Scheduler</span>,
+      children: <Alert message="Feed ingestion is managed via source refresh intervals in the Sources page." type="info" showIcon style={{ margin: 20 }} />,
     },
     {
       key: 'scheduler-legacy',
@@ -2693,11 +2680,6 @@ function Admin() {
               children: <ConfigurationManager />,
             },
             {
-              key: 'connectors',
-              label: <span><ApiOutlined /> Platform Connectors</span>,
-              children: <ConnectorsManager />,
-            },
-            {
               key: 'guardrails',
               label: <span><SafetyOutlined /> Prompt Guardrails</span>,
               children: <GuardrailsManager />,
@@ -2707,19 +2689,9 @@ function Admin() {
       ),
     },
     {
-      key: 'genai-lab',
-      label: <span><ExperimentOutlined /> GenAI Testing Lab</span>,
-      children: <ComprehensiveGenAILab />,
-    },
-    {
-      key: 'knowledge-base',
-      label: <span><DatabaseOutlined /> Knowledge Base</span>,
-      children: <RAGDashboard />,
-    },
-    {
       key: 'documentation',
       label: <span><BookOutlined /> Documentation</span>,
-      children: <ParshuDocumentation setActiveTab={setActiveTab} availableModels={availableModels} />,
+      children: <JyotiDocumentation setActiveTab={setActiveTab} availableModels={availableModels} />,
     },
     {
       key: 'appearance',
@@ -2763,7 +2735,7 @@ function Admin() {
                 <Tag color="blue">PostgreSQL</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Database Name">
-                {settings?.database_name || 'orion'}
+                {settings?.database_name || 'jyoti'}
               </Descriptions.Item>
               <Descriptions.Item label="Status">
                 {health?.checks?.database?.status === 'healthy' ? (
@@ -2794,9 +2766,9 @@ function Admin() {
               </Col>
               <Col span={8}>
                 <Statistic 
-                  title="Hunts" 
-                  value={stats?.total_hunts || 0}
-                  prefix={<ThunderboltOutlined />}
+                  title="Sources"
+                  value={stats?.total_sources || 0}
+                  prefix={<SyncOutlined />}
                 />
               </Col>
               <Col span={8}>

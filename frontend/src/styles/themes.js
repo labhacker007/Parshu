@@ -1,4 +1,4 @@
-// Parshu Theme Definitions - Research-Based Professional Cybersecurity Themes
+// Jyoti Theme Definitions - Research-Based Professional Themes
 // Based on analysis of CrowdStrike, SentinelOne, Palo Alto, Fortinet, Trellix, CyberArk
 
 export const themes = {

@@ -43,7 +43,7 @@ function NewsFeeds() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showUnreadOnly, setShowUnreadOnly] = useState(() => {
     // Default to unread only for each user
-    const saved = localStorage.getItem(`orion-unread-only-${user?.id}`);
+    const saved = localStorage.getItem(`jyoti-unread-only-${user?.id}`);
     return saved !== 'false'; // Default true
   });
   const [showHighPriorityOnly, setShowHighPriorityOnly] = useState(false);
@@ -107,7 +107,7 @@ function NewsFeeds() {
   
   // User preferences
   const [userPreferences, setUserPreferences] = useState(() => {
-    const saved = localStorage.getItem(`orion-feed-prefs-${user?.id}`);
+    const saved = localStorage.getItem(`jyoti-feed-prefs-${user?.id}`);
     const prefs = saved ? JSON.parse(saved) : {
       showSourceIcons: true,
       compactView: false,
@@ -167,7 +167,7 @@ function NewsFeeds() {
       } catch (feedErr) {
         console.error('Failed to fetch user feeds:', feedErr);
         // Fallback to localStorage for backwards compatibility
-        const savedFeeds = localStorage.getItem(`orion-user-feeds-${user?.id}`);
+        const savedFeeds = localStorage.getItem(`jyoti-user-feeds-${user?.id}`);
         if (savedFeeds) {
           try {
             setUserFeeds(JSON.parse(savedFeeds));
@@ -178,7 +178,7 @@ function NewsFeeds() {
       }
       
       // Load saved articles
-      const savedArts = localStorage.getItem(`orion-saved-articles-${user?.id}`);
+      const savedArts = localStorage.getItem(`jyoti-saved-articles-${user?.id}`);
       if (savedArts) {
         try {
           setSavedArticles(JSON.parse(savedArts));
@@ -277,8 +277,8 @@ function NewsFeeds() {
   
   // Save preferences when they change
   useEffect(() => {
-    localStorage.setItem(`orion-unread-only-${user?.id}`, showUnreadOnly.toString());
-    localStorage.setItem(`orion-feed-prefs-${user?.id}`, JSON.stringify(userPreferences));
+    localStorage.setItem(`jyoti-unread-only-${user?.id}`, showUnreadOnly.toString());
+    localStorage.setItem(`jyoti-feed-prefs-${user?.id}`, JSON.stringify(userPreferences));
   }, [showUnreadOnly, userPreferences, user?.id]);
   
   // Refetch articles when unread filter changes to ensure we have all articles when showing "All"
@@ -386,7 +386,7 @@ function NewsFeeds() {
       const newSaved = prev.includes(articleId) 
         ? prev.filter(id => id !== articleId)
         : [...prev, articleId];
-      localStorage.setItem(`orion-saved-articles-${user?.id}`, JSON.stringify(newSaved));
+      localStorage.setItem(`jyoti-saved-articles-${user?.id}`, JSON.stringify(newSaved));
       return newSaved;
     });
   };

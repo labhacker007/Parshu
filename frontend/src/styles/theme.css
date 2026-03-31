@@ -231,7 +231,7 @@ body {
    NAVBAR - CONSISTENT ACROSS THEMES
    ============================================ */
 
-.orion-navbar {
+.jyoti-navbar {
   background: var(--bg-navbar) !important;
   height: 56px;
   padding: 0 var(--spacing-lg);
@@ -243,7 +243,7 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.orion-navbar .logo {
+.jyoti-navbar .logo {
   color: var(--text-inverse);
   font-weight: 600;
   font-size: var(--font-size-lg);
@@ -252,12 +252,12 @@ body {
   gap: var(--spacing-sm);
 }
 
-.orion-navbar .logo-icon {
+.jyoti-navbar .logo-icon {
   color: var(--primary);
   font-size: 20px;
 }
 
-.theme-dark .orion-navbar .logo-icon {
+.theme-dark .jyoti-navbar .logo-icon {
   filter: drop-shadow(0 0 8px var(--primary));
 }
 
@@ -298,16 +298,16 @@ body {
 }
 
 /* Ensure navbar buttons are visible in dark mode */
-.theme-dark .orion-navbar .ant-btn-text {
+.theme-dark .jyoti-navbar .ant-btn-text {
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
-.theme-dark .orion-navbar .ant-btn-text:hover {
+.theme-dark .jyoti-navbar .ant-btn-text:hover {
   color: #fff !important;
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
-.theme-dark .orion-navbar .ant-btn-text .anticon {
+.theme-dark .jyoti-navbar .ant-btn-text .anticon {
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
@@ -606,10 +606,10 @@ body {
 
 /* ============================================
    UNIFIED STAT TILES - CONSISTENT ACROSS ALL PAGES
-   Use .orion-stat-tile for flat style tiles
+   Use .jyoti-stat-tile for flat style tiles
    ============================================ */
 
-.orion-stat-tile {
+.jyoti-stat-tile {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--card-radius);
@@ -620,18 +620,18 @@ body {
   min-height: 90px;
 }
 
-.orion-stat-tile:hover {
+.jyoti-stat-tile:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-color: var(--primary);
 }
 
-.orion-stat-tile.active {
+.jyoti-stat-tile.active {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
 }
 
-.orion-stat-tile .ant-statistic-title {
+.jyoti-stat-tile .ant-statistic-title {
   color: var(--text-secondary) !important;
   font-size: var(--font-size-xs) !important;
   font-weight: 500;
@@ -640,87 +640,87 @@ body {
   margin-bottom: 8px;
 }
 
-.orion-stat-tile .ant-statistic-content-value {
+.jyoti-stat-tile .ant-statistic-content-value {
   color: var(--text-primary) !important;
   font-weight: 700;
   font-size: 24px !important;
 }
 
-.orion-stat-tile .ant-statistic-content-prefix {
+.jyoti-stat-tile .ant-statistic-content-prefix {
   color: var(--text-primary) !important;
   font-size: 18px !important;
   margin-right: 8px;
 }
 
 /* Tile variants with colored icons */
-.orion-stat-tile.tile-primary .ant-statistic-content-prefix { color: var(--primary) !important; }
-.orion-stat-tile.tile-success .ant-statistic-content-prefix { color: var(--success) !important; }
-.orion-stat-tile.tile-warning .ant-statistic-content-prefix { color: var(--warning) !important; }
-.orion-stat-tile.tile-danger .ant-statistic-content-prefix { color: var(--danger) !important; }
-.orion-stat-tile.tile-info .ant-statistic-content-prefix { color: var(--info) !important; }
-.orion-stat-tile.tile-purple .ant-statistic-content-prefix { color: #8B5CF6 !important; }
+.jyoti-stat-tile.tile-primary .ant-statistic-content-prefix { color: var(--primary) !important; }
+.jyoti-stat-tile.tile-success .ant-statistic-content-prefix { color: var(--success) !important; }
+.jyoti-stat-tile.tile-warning .ant-statistic-content-prefix { color: var(--warning) !important; }
+.jyoti-stat-tile.tile-danger .ant-statistic-content-prefix { color: var(--danger) !important; }
+.jyoti-stat-tile.tile-info .ant-statistic-content-prefix { color: var(--info) !important; }
+.jyoti-stat-tile.tile-purple .ant-statistic-content-prefix { color: #8B5CF6 !important; }
 
 /* Active states for each variant */
-.orion-stat-tile.tile-success.active { border-color: var(--success); box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15); }
-.orion-stat-tile.tile-warning.active { border-color: var(--warning); box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15); }
-.orion-stat-tile.tile-danger.active { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15); }
-.orion-stat-tile.tile-purple.active { border-color: #8B5CF6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15); }
+.jyoti-stat-tile.tile-success.active { border-color: var(--success); box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15); }
+.jyoti-stat-tile.tile-warning.active { border-color: var(--warning); box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15); }
+.jyoti-stat-tile.tile-danger.active { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15); }
+.jyoti-stat-tile.tile-purple.active { border-color: #8B5CF6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15); }
 
 /* Dark theme stat tiles */
-.theme-dark .orion-stat-tile {
+.theme-dark .jyoti-stat-tile {
   background: var(--bg-card);
   border-color: var(--border-color);
 }
 
-.theme-dark .orion-stat-tile:hover {
+.theme-dark .jyoti-stat-tile:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 /* Hacker mode stat tiles */
-body.hacker-mode .orion-stat-tile {
+body.hacker-mode .jyoti-stat-tile {
   background: #0a0a0a;
   border-color: #1a1a1a;
 }
 
-body.hacker-mode .orion-stat-tile:hover {
+body.hacker-mode .jyoti-stat-tile:hover {
   border-color: rgba(0, 255, 65, 0.4);
   box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
 }
 
-body.hacker-mode .orion-stat-tile.active {
+body.hacker-mode .jyoti-stat-tile.active {
   border-color: #00FF41;
   box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
 }
 
-body.hacker-mode .orion-stat-tile .ant-statistic-title {
+body.hacker-mode .jyoti-stat-tile .ant-statistic-title {
   color: #88C070 !important;
 }
 
-body.hacker-mode .orion-stat-tile .ant-statistic-content-value {
+body.hacker-mode .jyoti-stat-tile .ant-statistic-content-value {
   color: #00FF41 !important;
 }
 
 /* Cyber mode stat tiles */
-body.cyber-mode .orion-stat-tile {
+body.cyber-mode .jyoti-stat-tile {
   background: #0a0a1a;
   border-color: #1a1a3a;
 }
 
-body.cyber-mode .orion-stat-tile:hover {
+body.cyber-mode .jyoti-stat-tile:hover {
   border-color: rgba(0, 240, 255, 0.4);
   box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
 }
 
-body.cyber-mode .orion-stat-tile.active {
+body.cyber-mode .jyoti-stat-tile.active {
   border-color: #00F0FF;
   box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
 }
 
-body.cyber-mode .orion-stat-tile .ant-statistic-title {
+body.cyber-mode .jyoti-stat-tile .ant-statistic-title {
   color: #7AC7D4 !important;
 }
 
-body.cyber-mode .orion-stat-tile .ant-statistic-content-value {
+body.cyber-mode .jyoti-stat-tile .ant-statistic-content-value {
   color: #00F0FF !important;
 }
 
@@ -881,11 +881,11 @@ body.cyber-mode .orion-stat-tile .ant-statistic-content-value {
 }
 
 /* Icon in navbar should always be visible */
-.orion-navbar .anticon {
+.jyoti-navbar .anticon {
   color: var(--text-inverse);
 }
 
-.orion-navbar .logo-icon {
+.jyoti-navbar .logo-icon {
   color: var(--primary) !important;
   filter: brightness(1.2);
 }
@@ -1101,17 +1101,17 @@ body.hacker-mode .stat-card:hover {
 }
 
 /* Hacker navbar */
-body.hacker-mode .orion-navbar {
+body.hacker-mode .jyoti-navbar {
   background: #000000 !important;
   border-bottom: 1px solid #00FF41;
   box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
 }
 
-body.hacker-mode .orion-navbar .logo {
+body.hacker-mode .jyoti-navbar .logo {
   text-shadow: 0 0 8px rgba(0, 255, 65, 0.8);
 }
 
-body.hacker-mode .orion-navbar .logo-icon {
+body.hacker-mode .jyoti-navbar .logo-icon {
   color: #00FF41 !important;
   filter: drop-shadow(0 0 10px rgba(0, 255, 65, 0.8));
 }
@@ -1325,18 +1325,18 @@ body.cyber-mode .stat-card:hover {
 }
 
 /* Cyber navbar */
-body.cyber-mode .orion-navbar {
+body.cyber-mode .jyoti-navbar {
   background: linear-gradient(90deg, #000005 0%, #0A0A1F 50%, #000005 100%) !important;
   border-bottom: 2px solid #00F0FF;
   box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
 }
 
-body.cyber-mode .orion-navbar .logo {
+body.cyber-mode .jyoti-navbar .logo {
   text-shadow: 0 0 12px rgba(0, 240, 255, 0.9);
   color: #00F0FF;
 }
 
-body.cyber-mode .orion-navbar .logo-icon {
+body.cyber-mode .jyoti-navbar .logo-icon {
   color: #00F0FF !important;
   filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.9));
 }

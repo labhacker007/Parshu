@@ -46,7 +46,15 @@ function NavBar() {
     restoreRole,
     loadImpersonationState 
   } = useAuthStore();
-  const { currentTheme, setTheme, themes, isDark, fontSizePreference, setFontSize, fontSizeOptions } = useTheme();
+  const { currentTheme, currentThemeId, setTheme, themes, isDark, fontSizePreference, setFontSize, fontSizeOptions } = useTheme();
+  
+  // Simple theme toggle handler
+  const handleThemeToggle = () => {
+    const themeOrder = ['dark', 'hacker', 'light'];
+    const currentIndex = themeOrder.indexOf(currentThemeId);
+    const nextTheme = themeOrder[(currentIndex + 1) % themeOrder.length];
+    setTheme(nextTheme);
+  };
   const { setTimezone, getTimezoneAbbr } = useTimezone();
   const navigate = useNavigate();
   const location = useLocation();
@@ -670,7 +678,7 @@ function NavBar() {
         </div>
       )}
       
-      <Header className="orion-navbar" style={{ 
+      <Header className="jyoti-navbar" style={{ 
         display: 'flex', 
         alignItems: 'center', 
         padding: '0 24px',
@@ -691,7 +699,7 @@ function NavBar() {
           fontSize: 20,
           ...(isDark ? { filter: 'drop-shadow(0 0 8px var(--primary))' } : {}),
         }} />
-        <span>Parshu</span>
+        <span>Jyoti</span>
       </div>
       
       {user && (
@@ -714,6 +722,16 @@ function NavBar() {
       )}
       
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Theme Toggle Button */}
+        <Button 
+          type="text" 
+          onClick={handleThemeToggle}
+          style={{ color: 'var(--text-inverse)' }}
+          title={`Current: ${currentThemeId} (Click to switch)`}
+        >
+          {currentThemeId === 'hacker' ? '🖥️' : currentThemeId === 'light' ? '☀️' : '🌙'}
+        </Button>
+        
         {user ? (
           <Dropdown 
             menu={{ items: userMenuItems }}

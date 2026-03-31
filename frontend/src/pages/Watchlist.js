@@ -1,42 +1,100 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, Button, Space, Tag, Input, List, Switch,
+import {
+  Card, Button, Space, Tag, Input, List, Switch, Tabs,
   Typography, message, Popconfirm, Empty, Alert, Statistic, Row, Col
 } from 'antd';
-import { 
-  PlusOutlined, 
+import {
+  PlusOutlined,
   DeleteOutlined,
   EyeOutlined,
   TagOutlined,
   BellOutlined,
   SyncOutlined,
   FireOutlined,
-  RightOutlined
+  RightOutlined,
+  GlobalOutlined,
+  UserOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { watchlistAPI, articlesAPI } from '../api/client';
+import client from '../api/client';
+import { useAuthStore } from '../store';
 import './Watchlist.css';
 
 const { Title, Text } = Typography;
 
 function Watchlist() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN';
+  const [activeTab, setActiveTab] = useState('personal');
   const [loading, setLoading] = useState(false);
   const [keywords, setKeywords] = useState([]);
+  const [personalKeywords, setPersonalKeywords] = useState([]);
   const [newKeyword, setNewKeyword] = useState('');
+  const [newPersonalKeyword, setNewPersonalKeyword] = useState('');
   const [adding, setAdding] = useState(false);
+  const [addingPersonal, setAddingPersonal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [highPriorityCount, setHighPriorityCount] = useState(0);
 
   // Navigate to article queue filtered by high priority
   const handleViewHighPriorityArticles = () => {
-    navigate('/articles?high_priority=true');
+    navigate('/news?high_priority=true');
   };
 
   useEffect(() => {
     fetchKeywords();
+    fetchPersonalKeywords();
     fetchHighPriorityCount();
   }, []);
+
+  // Personal watchlist CRUD
+  const fetchPersonalKeywords = async () => {
+    try {
+      const response = await client.get('/users/watchlist/');
+      setPersonalKeywords(response.data);
+    } catch (err) {
+      console.error('Failed to fetch personal watchlist', err);
+    }
+  };
+
+  const handleAddPersonal = async () => {
+    if (!newPersonalKeyword.trim()) {
+      message.warning('Please enter a keyword');
+      return;
+    }
+    setAddingPersonal(true);
+    try {
+      await client.post('/users/watchlist/', { keyword: newPersonalKeyword.trim() });
+      message.success('Keyword added to your personal watchlist');
+      setNewPersonalKeyword('');
+      fetchPersonalKeywords();
+    } catch (err) {
+      message.error(err.response?.data?.detail || 'Failed to add keyword');
+    } finally {
+      setAddingPersonal(false);
+    }
+  };
+
+  const handleDeletePersonal = async (id) => {
+    try {
+      await client.delete(`/users/watchlist/${id}`);
+      message.success('Keyword removed from personal watchlist');
+      fetchPersonalKeywords();
+    } catch (err) {
+      message.error('Failed to remove keyword');
+    }
+  };
+
+  const handleTogglePersonal = async (id) => {
+    try {
+      await client.patch(`/users/watchlist/${id}/toggle`);
+      fetchPersonalKeywords();
+    } catch (err) {
+      message.error('Failed to toggle keyword');
+    }
+  };
 
   // Fetch high priority count on load
   const fetchHighPriorityCount = async () => {
@@ -131,133 +189,75 @@ function Watchlist() {
 
   const activeCount = keywords.filter(k => k.is_active).length;
 
-  return (
-    <div className="watchlist-container">
-      <div className="watchlist-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div>
-          <Title level={4} style={{ margin: 0 }}>
-            <EyeOutlined /> Watchlist Keywords
-          </Title>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            Monitor keywords across threat intelligence feeds
-          </Text>
-        </div>
-        <Tag color="blue" style={{ fontSize: 13, padding: '4px 12px' }}>
-          <BellOutlined /> {activeCount} Active
-        </Tag>
-      </div>
+  const personalActiveCount = personalKeywords.filter(k => k.is_active).length;
 
+  // Personal Watchlist Tab Content
+  const PersonalTab = () => (
+    <>
       <Row gutter={12} style={{ marginBottom: 16 }}>
-        <Col span={8}>
+        <Col span={12}>
           <Card size="small" bodyStyle={{ padding: '12px 16px' }}>
-            <Statistic 
-              title="Active Keywords" 
-              value={activeCount} 
-              prefix={<BellOutlined />}
+            <Statistic
+              title="My Keywords"
+              value={personalKeywords.length}
+              prefix={<UserOutlined />}
               valueStyle={{ color: '#1890ff', fontSize: 24 }}
             />
           </Card>
         </Col>
-        <Col span={8}>
-          <Card 
-            size="small"
-            hoverable 
-            onClick={handleViewHighPriorityArticles}
-            style={{ cursor: 'pointer' }}
-            bodyStyle={{ padding: '12px 16px' }}
-          >
-            <Statistic 
-              title={
-                <Space>
-                  High Priority Articles
-                  <RightOutlined style={{ fontSize: 10, color: '#999' }} />
-                </Space>
-              }
-              value={highPriorityCount} 
-              prefix={<FireOutlined />}
-              valueStyle={{ color: '#f5222d', fontSize: 24 }}
+        <Col span={12}>
+          <Card size="small" bodyStyle={{ padding: '12px 16px' }}>
+            <Statistic
+              title="Active"
+              value={personalActiveCount}
+              prefix={<BellOutlined />}
+              valueStyle={{ color: '#52c41a', fontSize: 24 }}
             />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card size="small" bodyStyle={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 74 }}>
-            <Button 
-              type="primary" 
-              icon={<SyncOutlined spin={refreshing} />} 
-              onClick={handleRefresh}
-              loading={refreshing}
-              block
-            >
-              Refresh Matches
-            </Button>
           </Card>
         </Col>
       </Row>
 
-
       <Card size="small" className="add-keyword-card" style={{ marginBottom: 12 }}>
         <Space.Compact style={{ width: '100%' }}>
           <Input
-            placeholder="Enter keyword to monitor (e.g., ransomware, APT29, CVE-2024)"
-            value={newKeyword}
-            onChange={(e) => setNewKeyword(e.target.value)}
-            onPressEnter={handleAdd}
+            placeholder="Add a personal keyword (e.g., AI, cloud security, GDPR)"
+            value={newPersonalKeyword}
+            onChange={(e) => setNewPersonalKeyword(e.target.value)}
+            onPressEnter={handleAddPersonal}
             prefix={<TagOutlined />}
           />
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
-            onClick={handleAdd}
-            loading={adding}
-          >
-            Add Keyword
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAddPersonal} loading={addingPersonal}>
+            Add
           </Button>
         </Space.Compact>
       </Card>
 
       <Card size="small" loading={loading} style={{ marginBottom: 12 }}>
-        {keywords.length === 0 ? (
-          <Empty 
-            description="No keywords in watchlist"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          >
-            <Button type="primary" icon={<PlusOutlined />}>
-              Add Your First Keyword
-            </Button>
-          </Empty>
+        {personalKeywords.length === 0 ? (
+          <Empty description="No personal watchlist keywords yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
         ) : (
           <List
             grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4, xl: 4 }}
-            dataSource={keywords}
+            dataSource={personalKeywords}
             renderItem={(item) => (
               <List.Item>
-                <Card 
+                <Card
                   className={`keyword-card ${item.is_active ? 'active' : 'inactive'}`}
                   size="small"
                   actions={[
-                    <Switch 
+                    <Switch
                       checked={item.is_active}
-                      onChange={(checked) => handleToggle(item.id, checked)}
+                      onChange={() => handleTogglePersonal(item.id)}
                       checkedChildren="Active"
-                      unCheckedChildren="Inactive"
+                      unCheckedChildren="Off"
                     />,
-                    <Popconfirm
-                      title="Remove this keyword?"
-                      onConfirm={() => handleDelete(item.id)}
-                    >
-                      <Button 
-                        type="text" 
-                        danger 
-                        icon={<DeleteOutlined />}
-                      />
+                    <Popconfirm title="Remove this keyword?" onConfirm={() => handleDeletePersonal(item.id)}>
+                      <Button type="text" danger icon={<DeleteOutlined />} />
                     </Popconfirm>
                   ]}
                 >
                   <div className="keyword-content">
-                    <Tag 
-                      color={item.is_active ? 'blue' : 'default'}
-                      style={{ fontSize: 14, padding: '4px 12px' }}
-                    >
+                    <Tag color={item.is_active ? 'green' : 'default'} style={{ fontSize: 14, padding: '4px 12px' }}>
                       {item.keyword}
                     </Tag>
                     <Text type="secondary" style={{ fontSize: 11, marginTop: 8, display: 'block' }}>
@@ -270,19 +270,136 @@ function Watchlist() {
           />
         )}
       </Card>
+    </>
+  );
 
-      <Card size="small" title="Suggested Keywords">
+  // Global Watchlist Tab Content (admin only)
+  const GlobalTab = () => (
+    <>
+      <Row gutter={12} style={{ marginBottom: 16 }}>
+        <Col span={8}>
+          <Card size="small" bodyStyle={{ padding: '12px 16px' }}>
+            <Statistic title="Global Keywords" value={activeCount} prefix={<BellOutlined />}
+              valueStyle={{ color: '#1890ff', fontSize: 24 }} />
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card size="small" hoverable onClick={handleViewHighPriorityArticles}
+            style={{ cursor: 'pointer' }} bodyStyle={{ padding: '12px 16px' }}>
+            <Statistic title={<Space>High Priority <RightOutlined style={{ fontSize: 10, color: '#999' }} /></Space>}
+              value={highPriorityCount} prefix={<FireOutlined />}
+              valueStyle={{ color: '#f5222d', fontSize: 24 }} />
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card size="small" bodyStyle={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 74 }}>
+            <Button type="primary" icon={<SyncOutlined spin={refreshing} />}
+              onClick={handleRefresh} loading={refreshing} block>
+              Refresh Matches
+            </Button>
+          </Card>
+        </Col>
+      </Row>
+
+      <Card size="small" className="add-keyword-card" style={{ marginBottom: 12 }}>
+        <Space.Compact style={{ width: '100%' }}>
+          <Input
+            placeholder="Enter global keyword (affects all users)"
+            value={newKeyword}
+            onChange={(e) => setNewKeyword(e.target.value)}
+            onPressEnter={handleAdd}
+            prefix={<TagOutlined />}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} loading={adding}>
+            Add Global Keyword
+          </Button>
+        </Space.Compact>
+      </Card>
+
+      <Card size="small" loading={loading} style={{ marginBottom: 12 }}>
+        {keywords.length === 0 ? (
+          <Empty description="No global watchlist keywords" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        ) : (
+          <List
+            grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4, xl: 4 }}
+            dataSource={keywords}
+            renderItem={(item) => (
+              <List.Item>
+                <Card
+                  className={`keyword-card ${item.is_active ? 'active' : 'inactive'}`}
+                  size="small"
+                  actions={[
+                    <Switch checked={item.is_active} onChange={(checked) => handleToggle(item.id, checked)}
+                      checkedChildren="Active" unCheckedChildren="Inactive" />,
+                    <Popconfirm title="Remove this keyword?" onConfirm={() => handleDelete(item.id)}>
+                      <Button type="text" danger icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  ]}
+                >
+                  <div className="keyword-content">
+                    <Tag color={item.is_active ? 'blue' : 'default'} style={{ fontSize: 14, padding: '4px 12px' }}>
+                      {item.keyword}
+                    </Tag>
+                    <Text type="secondary" style={{ fontSize: 11, marginTop: 8, display: 'block' }}>
+                      Added: {new Date(item.created_at).toLocaleDateString()}
+                    </Text>
+                  </div>
+                </Card>
+              </List.Item>
+            )}
+          />
+        )}
+      </Card>
+    </>
+  );
+
+  const tabItems = [
+    {
+      key: 'personal',
+      label: <span><UserOutlined /> My Watchlist ({personalKeywords.length})</span>,
+      children: <PersonalTab />
+    },
+    ...(isAdmin ? [{
+      key: 'global',
+      label: <span><GlobalOutlined /> Global Watchlist ({keywords.length})</span>,
+      children: <GlobalTab />
+    }] : [])
+  ];
+
+  return (
+    <div className="watchlist-container">
+      <div className="watchlist-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div>
+          <Title level={4} style={{ margin: 0 }}>
+            <EyeOutlined /> Watchlist Keywords
+          </Title>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            Monitor keywords across news feeds
+          </Text>
+        </div>
+        <Tag color="blue" style={{ fontSize: 13, padding: '4px 12px' }}>
+          <BellOutlined /> {activeCount + personalActiveCount} Active
+        </Tag>
+      </div>
+
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={tabItems}
+      />
+
+      <Card size="small" title="Suggested Keywords" style={{ marginTop: 12 }}>
         <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
-          Click to add common threat intelligence keywords:
+          Click to add common keywords:
         </Text>
         <Space wrap size={[6, 6]}>
-          {['ransomware', 'APT', 'zero-day', 'CVE-2024', 'phishing', 'malware', 
-            'data breach', 'supply chain', 'Lazarus', 'Cobalt Strike', 'Log4Shell',
-            'critical vulnerability', 'exploit'].map(kw => (
-            <Tag 
+          {['AI', 'cybersecurity', 'cloud', 'data breach', 'zero-day',
+            'ransomware', 'compliance', 'GDPR', 'supply chain', 'phishing',
+            'machine learning', 'blockchain'].map(kw => (
+            <Tag
               key={kw}
               style={{ cursor: 'pointer', margin: 0 }}
-              onClick={() => setNewKeyword(kw)}
+              onClick={() => activeTab === 'personal' ? setNewPersonalKeyword(kw) : setNewKeyword(kw)}
             >
               + {kw}
             </Tag>

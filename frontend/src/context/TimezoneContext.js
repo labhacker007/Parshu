@@ -35,25 +35,25 @@ export const useTimezone = () => {
 
 export const TimezoneProvider = ({ children }) => {
   const [timezone, setTimezoneState] = useState(() => {
-    const saved = localStorage.getItem('orion-timezone');
+    const saved = localStorage.getItem('jyoti-timezone');
     return saved || 'UTC';
   });
 
   const [use24Hour, setUse24HourState] = useState(() => {
-    const saved = localStorage.getItem('orion-24hour');
+    const saved = localStorage.getItem('jyoti-24hour');
     return saved === 'true';
   });
 
   const [showSeconds, setShowSecondsState] = useState(() => {
-    const saved = localStorage.getItem('orion-show-seconds');
+    const saved = localStorage.getItem('jyoti-show-seconds');
     return saved === 'true';
   });
 
   // Save preferences to localStorage
   useEffect(() => {
-    localStorage.setItem('orion-timezone', timezone);
-    localStorage.setItem('orion-24hour', use24Hour.toString());
-    localStorage.setItem('orion-show-seconds', showSeconds.toString());
+    localStorage.setItem('jyoti-timezone', timezone);
+    localStorage.setItem('jyoti-24hour', use24Hour.toString());
+    localStorage.setItem('jyoti-show-seconds', showSeconds.toString());
   }, [timezone, use24Hour, showSeconds]);
 
   // Get the actual timezone string for Intl API

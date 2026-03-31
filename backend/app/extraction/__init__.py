@@ -1,1 +1,1 @@
-"""Extraction module for IOCs, IOAs, TTPs, and ATLAS techniques."""
+"""Placeholder extraction module - to be implemented."""

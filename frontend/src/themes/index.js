@@ -1,5 +1,5 @@
 /**
- * PARSHU - Complete Theme System
+ * JYOTI - Complete Theme System
  * 4 Professional Cybersecurity Themes
  * 
  * 1. MIDNIGHT OPS    - Dark theme with cyan accents (Prototype match)
@@ -13,7 +13,7 @@ export const THEMES = {
     id: 'midnight',
     name: 'Midnight Ops',
     description: 'Professional dark theme with cyan accents',
-    author: 'Parshu Design Team',
+    author: 'Jyoti Design Team',
     colors: {
       // Background hierarchy
       background: '240 20% 4%',        // #0a0a0f
@@ -87,7 +87,7 @@ export const THEMES = {
     id: 'corporate',
     name: 'Corporate Sentinel',
     description: 'Clean enterprise theme for business environments',
-    author: 'Parshu Design Team',
+    author: 'Jyoti Design Team',
     colors: {
       // Background hierarchy - Light theme
       background: '0 0% 98%',         // #fafafa
@@ -161,7 +161,7 @@ export const THEMES = {
     id: 'cyberpunk',
     name: 'Neon Cyberpunk',
     description: 'High contrast neon theme for SOC operations',
-    author: 'Parshu Design Team',
+    author: 'Jyoti Design Team',
     colors: {
       // Background hierarchy - Deep purple/black
       background: '270 50% 5%',       // #0d0612
@@ -235,7 +235,7 @@ export const THEMES = {
     id: 'tactical',
     name: 'Military Tactical',
     description: 'Dark tactical theme with amber/green accents',
-    author: 'Parshu Design Team',
+    author: 'Jyoti Design Team',
     colors: {
       // Background hierarchy - Dark olive/black
       background: '120 20% 5%',       // #0a0f0a
@@ -323,12 +323,12 @@ export function applyTheme(themeId) {
   root.classList.add(`theme-${themeId}`);
   
   // Store preference
-  localStorage.setItem('parshu-theme', themeId);
+  localStorage.setItem('jyoti-theme', themeId);
 }
 
 // Get current theme
 export function getCurrentTheme() {
-  return localStorage.getItem('parshu-theme') || 'midnight';
+  return localStorage.getItem('jyoti-theme') || 'midnight';
 }
 
 // Initialize theme on load

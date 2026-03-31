@@ -1,0 +1,35 @@
+name: myfeeds
+
+services:
+  postgres:
+    container_name: myfeeds-postgres
+    environment:
+      POSTGRES_USER: ${MYFEEDS_POSTGRES_USER:-${POSTGRES_USER}}
+      POSTGRES_PASSWORD: ${MYFEEDS_POSTGRES_PASSWORD:-${POSTGRES_PASSWORD}}
+      POSTGRES_DB: ${MYFEEDS_POSTGRES_DB:-${POSTGRES_DB}}
+
+  redis:
+    container_name: myfeeds-redis
+
+  backend:
+    container_name: myfeeds-backend
+    environment:
+      ENV: myfeeds
+      APP_INSTANCE_NAME: MyFeeds
+      SECRET_KEY: ${MYFEEDS_SECRET_KEY:-${SECRET_KEY}}
+      DATABASE_URL: ${MYFEEDS_DATABASE_URL:-${DATABASE_URL}}
+      REDIS_URL: ${MYFEEDS_REDIS_URL:-${REDIS_URL:-redis://redis:6379/0}}
+    ports:
+      - "18000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    container_name: myfeeds-frontend
+    ports:
+      - "13000:3000"
+    environment:
+      REACT_APP_API_URL: ${MYFEEDS_REACT_APP_API_URL:-${REACT_APP_API_URL:-http://localhost:18000}}

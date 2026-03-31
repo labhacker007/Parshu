@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.logging import logger
 from app.auth.dependencies import get_current_user
-from app.models import User, UserFeed
+from app.models import User, UserFeed, Category
 
 router = APIRouter(prefix="/users/feeds", tags=["user-feeds"])
 
@@ -24,8 +24,9 @@ class UserFeedCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     url: str = Field(..., min_length=1, max_length=2048)
     description: Optional[str] = None
-    category: str = "custom"
-    feed_type: str = "rss"
+    category_id: Optional[int] = None  # Foreign key to Category
+    category: str = "custom"  # Legacy field for backward compatibility
+    feed_type: str = "rss"  # rss, atom, html
     auto_ingest: bool = True
     notify_on_new: bool = False
 
@@ -33,10 +34,22 @@ class UserFeedCreate(BaseModel):
 class UserFeedUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
-    category: Optional[str] = None
+    category_id: Optional[int] = None  # Move to different category
+    category: Optional[str] = None  # Legacy field
     is_active: Optional[bool] = None
     auto_ingest: Optional[bool] = None
     notify_on_new: Optional[bool] = None
+
+
+class CategoryInfo(BaseModel):
+    """Category information for feed response."""
+    id: int
+    name: str
+    color: Optional[str]
+    icon: Optional[str]
+
+    class Config:
+        from_attributes = True
 
 
 class UserFeedResponse(BaseModel):
@@ -45,7 +58,9 @@ class UserFeedResponse(BaseModel):
     name: str
     url: str
     description: Optional[str]
-    category: str
+    category_id: Optional[int]
+    category: str  # Legacy field
+    category_info: Optional[CategoryInfo] = None  # Full category details
     feed_type: str
     is_active: bool
     last_fetched: Optional[datetime]
@@ -55,7 +70,7 @@ class UserFeedResponse(BaseModel):
     notify_on_new: bool
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -69,19 +84,36 @@ class UserFeedListResponse(BaseModel):
 @router.get("/", response_model=UserFeedListResponse)
 async def list_user_feeds(
     include_inactive: bool = False,
+    category_id: Optional[int] = None,  # Filter by category
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """List all custom feeds for the current user."""
+    """List all custom feeds for the current user, optionally filtered by category."""
     query = db.query(UserFeed).filter(UserFeed.user_id == current_user.id)
-    
+
     if not include_inactive:
         query = query.filter(UserFeed.is_active == True)
-    
+
+    if category_id is not None:
+        query = query.filter(UserFeed.category_id == category_id)
+
     feeds = query.order_by(UserFeed.created_at.desc()).all()
-    
+
+    # Populate category_info for each feed
+    feed_responses = []
+    for feed in feeds:
+        feed_dict = UserFeedResponse.model_validate(feed).model_dump()
+
+        # Add category info if feed has a category
+        if feed.category_id:
+            category = db.query(Category).filter(Category.id == feed.category_id).first()
+            if category:
+                feed_dict["category_info"] = CategoryInfo.model_validate(category)
+
+        feed_responses.append(UserFeedResponse(**feed_dict))
+
     return UserFeedListResponse(
-        feeds=[UserFeedResponse.model_validate(f) for f in feeds],
+        feeds=feed_responses,
         total=len(feeds)
     )
 
@@ -105,7 +137,7 @@ async def validate_feed_url(
         result = await safe_fetch_text_async(
             url,
             policy=policy,
-            headers={'User-Agent': 'Parshu Feed Reader/1.0'},
+            headers={'User-Agent': 'Jyoti Feed Reader/1.0'},
             timeout_seconds=15.0,
             max_bytes=2_000_000,
         )
@@ -209,24 +241,44 @@ async def create_user_feed(
         detected_type = validation.get('feed_type', 'rss')
         feed_data.feed_type = detected_type
     
+    # Validate category_id if provided
+    if feed_data.category_id:
+        category = db.query(Category).filter(
+            Category.id == feed_data.category_id,
+            Category.user_id == current_user.id
+        ).first()
+        if not category:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found"
+            )
+
     # Create the feed
     feed = UserFeed(
         user_id=current_user.id,
         name=feed_data.name,
         url=feed_data.url,
         description=feed_data.description,
+        category_id=feed_data.category_id,
         category=feed_data.category,
         feed_type=feed_data.feed_type,
         auto_ingest=feed_data.auto_ingest,
         notify_on_new=feed_data.notify_on_new,
         is_active=True
     )
-    
+
     db.add(feed)
     db.commit()
     db.refresh(feed)
-    
-    return UserFeedResponse.model_validate(feed)
+
+    # Populate category_info if applicable
+    feed_dict = UserFeedResponse.model_validate(feed).model_dump()
+    if feed.category_id:
+        category = db.query(Category).filter(Category.id == feed.category_id).first()
+        if category:
+            feed_dict["category_info"] = CategoryInfo.model_validate(category)
+
+    return UserFeedResponse(**feed_dict)
 
 
 @router.get("/{feed_id}", response_model=UserFeedResponse)
@@ -257,28 +309,47 @@ async def update_user_feed(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update a custom feed."""
+    """Update a custom feed (e.g., move to different category, rename, enable/disable)."""
     feed = db.query(UserFeed).filter(
         UserFeed.id == feed_id,
         UserFeed.user_id == current_user.id
     ).first()
-    
+
     if not feed:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Feed not found"
         )
-    
+
+    # Validate category_id if being changed
+    if feed_data.category_id is not None and feed_data.category_id != feed.category_id:
+        category = db.query(Category).filter(
+            Category.id == feed_data.category_id,
+            Category.user_id == current_user.id
+        ).first()
+        if not category:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found"
+            )
+
     # Update fields that were provided
     update_data = feed_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(feed, field, value)
-    
+
     feed.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(feed)
-    
-    return UserFeedResponse.model_validate(feed)
+
+    # Populate category_info if applicable
+    feed_dict = UserFeedResponse.model_validate(feed).model_dump()
+    if feed.category_id:
+        category = db.query(Category).filter(Category.id == feed.category_id).first()
+        if category:
+            feed_dict["category_info"] = CategoryInfo.model_validate(category)
+
+    return UserFeedResponse(**feed_dict)
 
 
 @router.delete("/{feed_id}", status_code=status.HTTP_204_NO_CONTENT)
